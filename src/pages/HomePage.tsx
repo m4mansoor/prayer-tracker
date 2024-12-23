@@ -21,6 +21,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import MosqueIcon from '@mui/icons-material/Mosque';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PendingIcon from '@mui/icons-material/Pending';
+import SentimentSatisfiedAltIcon from '@mui/icons-material/SentimentSatisfiedAlt';
+import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDissatisfied';
 import { v4 as uuidv4 } from 'uuid';
 import { Prayer, PrayerHistory, PaymentHistory } from '../types';
 import {
@@ -226,15 +228,32 @@ const HomePage: React.FC = () => {
                           {prayer.arabicName}
                         </Typography>
                       </Box>
-                      <IconButton 
-                        onClick={() => handleEditPrayer(prayer)}
-                        sx={{ 
-                          color: 'primary.main',
-                          '&:hover': { backgroundColor: 'rgba(31, 75, 63, 0.1)' }
-                        }}
-                      >
-                        <EditIcon />
-                      </IconButton>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {prayer.completed ? (
+                          <SentimentSatisfiedAltIcon 
+                            sx={{ 
+                              color: 'success.main',
+                              fontSize: '2rem'
+                            }} 
+                          />
+                        ) : (
+                          <SentimentVeryDissatisfiedIcon 
+                            sx={{ 
+                              color: 'error.main',
+                              fontSize: '2rem'
+                            }} 
+                          />
+                        )}
+                        <IconButton 
+                          onClick={() => handleEditPrayer(prayer)}
+                          sx={{ 
+                            color: 'primary.main',
+                            '&:hover': { backgroundColor: 'rgba(31, 75, 63, 0.1)' }
+                          }}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      </Box>
                     </Box>
                     
                     <Box sx={{ mb: 2 }}>
@@ -258,6 +277,7 @@ const HomePage: React.FC = () => {
                     </Box>
                   </CardContent>
                   
+
                   <CardActions sx={{ p: 2, pt: 0 }}>
                     <Button
                       fullWidth

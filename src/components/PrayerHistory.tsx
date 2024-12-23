@@ -28,6 +28,8 @@ import {
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import EditIcon from '@mui/icons-material/Edit';
+import SentimentSatisfiedAltIcon from '@mui/icons-material/SentimentSatisfiedAlt';
+import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDissatisfied';
 import { PrayerHistory, FilterOptions, PrayerStats, Prayer } from '../types';
 import { filterPrayerHistory, getDateRangeForFilter, formatDate } from '../utils/prayerUtils';
 
@@ -323,7 +325,29 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryProps> = ({ history, onUpdat
                       {new Date(date).toLocaleDateString()}
                     </TableCell>
                   )}
-                  <TableCell>{prayer.name}</TableCell>
+                  <TableCell>
+                    {prayer.name}
+                    <IconButton
+                      size="small"
+                      onClick={() => handleEditPrayer(prayer, date)}
+                      sx={{ ml: 1 }}
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton size="small" sx={{ ml: 1 }}>
+                      {prayer.completed ? (
+                        <SentimentSatisfiedAltIcon
+                          fontSize="small"
+                          sx={{ color: 'success.main' }}
+                        />
+                      ) : (
+                        <SentimentVeryDissatisfiedIcon
+                          fontSize="small"
+                          sx={{ color: 'error.main' }}
+                        />
+                      )}
+                    </IconButton>
+                  </TableCell>
                   <TableCell>
                     <Typography
                       color={prayer.completed ? 'success.main' : 'error.main'}
