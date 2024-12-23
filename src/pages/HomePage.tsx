@@ -9,7 +9,6 @@ import {
   IconButton,
   Button,
   useTheme,
-  alpha,
 } from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import HistoryIcon from '@mui/icons-material/History';
@@ -39,123 +38,92 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, ${alpha(
-          theme.palette.primary.dark,
-          0.2
-        )} 100%)`,
-        pt: 4,
-        pb: 8,
-      }}
-    >
-      <Container maxWidth="md">
-        <Box
-          sx={{
-            mb: 6,
-            textAlign: 'center',
-            '& h1': {
-              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              mb: 2,
-            },
-          }}
-        >
-          <Typography variant="h3" component="h1" fontWeight="bold">
-            Qunoot Prayer Tracker
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-            Track your daily prayers and maintain accountability
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<HistoryIcon />}
-            onClick={() => setShowHistory(true)}
-            sx={{
-              mt: 2,
-              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-              '&:hover': {
-                background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.secondary.dark} 100%)`,
-              },
+    <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', py: 4 }}>
+      <Container maxWidth="sm">
+        <Box sx={{ mb: 6, textAlign: 'center' }}>
+          <Typography 
+            variant="h4" 
+            component="h1" 
+            gutterBottom 
+            sx={{ 
+              fontWeight: 'bold',
+              color: 'primary.main'
             }}
           >
-            View History
+            Qunoot
+          </Typography>
+          <Typography 
+            variant="subtitle1" 
+            sx={{ 
+              mb: 3,
+              color: 'text.secondary'
+            }}
+          >
+            Track your daily prayers
+          </Typography>
+          <Button
+            variant="outlined"
+            color="primary"
+            startIcon={<HistoryIcon />}
+            onClick={() => setShowHistory(true)}
+            sx={{ 
+              borderRadius: 2,
+              textTransform: 'none',
+              px: 3
+            }}
+          >
+            Prayer History
           </Button>
         </Box>
 
-        <Grid container spacing={3}>
+        <Grid container spacing={2}>
           {todaysPrayers.map((prayer) => (
-            <Grid item xs={12} sm={6} md={4} key={prayer.name}>
-              <Card
-                sx={{
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  position: 'relative',
-                  transition: 'all 0.3s ease',
-                  background: prayer.completed
-                    ? `linear-gradient(135deg, ${alpha(theme.palette.success.light, 0.1)} 0%, ${alpha(
-                        theme.palette.success.main,
-                        0.2
-                      )} 100%)`
-                    : 'white',
-                  borderRadius: 3,
-                  boxShadow: prayer.completed
-                    ? `0 8px 32px ${alpha(theme.palette.success.main, 0.15)}`
-                    : '0 8px 32px rgba(0, 0, 0, 0.1)',
-                  '&:hover': {
-                    transform: 'translateY(-8px)',
-                    boxShadow: prayer.completed
-                      ? `0 12px 48px ${alpha(theme.palette.success.main, 0.2)}`
-                      : '0 12px 48px rgba(0, 0, 0, 0.12)',
-                  },
+            <Grid item xs={12} key={prayer.name}>
+              <Card 
+                sx={{ 
+                  borderRadius: 2,
+                  boxShadow: 'none',
+                  border: 1,
+                  borderColor: prayer.completed ? 'success.main' : 'divider',
+                  bgcolor: prayer.completed ? 'success.light' : 'background.paper',
+                  transition: 'all 0.2s ease'
                 }}
               >
                 <CardContent>
-                  <Box
-                    display="flex"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    mb={2}
-                  >
-                    <Typography
-                      variant="h5"
-                      component="h2"
-                      fontWeight="bold"
-                      sx={{
-                        color: prayer.completed
-                          ? theme.palette.success.main
-                          : theme.palette.text.primary,
-                      }}
-                    >
-                      {prayer.name}
-                    </Typography>
+                  <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Box>
+                      <Typography 
+                        variant="h6"
+                        sx={{ 
+                          fontWeight: 'medium',
+                          color: prayer.completed ? 'success.dark' : 'text.primary'
+                        }}
+                      >
+                        {prayer.name}
+                      </Typography>
+                      {prayer.time && (
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            color: prayer.completed ? 'success.dark' : 'text.secondary'
+                          }}
+                        >
+                          {prayer.time}
+                        </Typography>
+                      )}
+                    </Box>
                     <IconButton
                       onClick={() => handlePrayerToggle(prayer.name)}
                       sx={{
-                        color: prayer.completed ? theme.palette.success.main : theme.palette.grey[400],
-                        transition: 'all 0.3s ease',
+                        color: prayer.completed ? 'success.main' : 'action.disabled',
                         '&:hover': {
-                          transform: 'scale(1.2)',
-                          color: prayer.completed
-                            ? theme.palette.success.dark
-                            : theme.palette.success.light,
-                        },
+                          bgcolor: prayer.completed ? 'success.lighter' : 'action.hover'
+                        }
                       }}
                     >
-                      <CheckCircleOutlineIcon fontSize="large" />
+                      <CheckCircleOutlineIcon />
                     </IconButton>
                   </Box>
-                  {prayer.time && (
-                    <Typography
-                      color={prayer.completed ? 'success.main' : 'text.secondary'}
-                      sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                    >
-                      Time: {prayer.time}
-                    </Typography>
-                  )}
                 </CardContent>
               </Card>
             </Grid>

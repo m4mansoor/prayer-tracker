@@ -9,7 +9,7 @@ import {
   Grid,
   Paper,
   useTheme,
-  alpha,
+  Divider,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -55,7 +55,6 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryComponentProps> = ({
         }
       });
 
-      // Calculate streaks
       const allCompleted = day.prayers.every((p) => p.completed);
       if (allCompleted) {
         currentStreak++;
@@ -100,118 +99,88 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryComponentProps> = ({
     <Dialog
       open={true}
       onClose={onClose}
-      maxWidth="md"
+      maxWidth="sm"
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: 3,
-          background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.9)} 0%, ${alpha(
-            theme.palette.background.paper,
-            0.95
-          )} 100%)`,
-          backdropFilter: 'blur(10px)',
+          borderRadius: 2,
+          bgcolor: 'background.paper',
         },
       }}
     >
       <DialogTitle>
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          sx={{
-            '& h2': {
-              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            },
-          }}
-        >
-          <Typography variant="h4" component="h2" fontWeight="bold">
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
             Prayer History
           </Typography>
-          <IconButton
-            onClick={onClose}
-            sx={{
-              color: theme.palette.grey[500],
-              '&:hover': {
-                color: theme.palette.primary.main,
-              },
-            }}
-          >
+          <IconButton onClick={onClose} size="small">
             <CloseIcon />
           </IconButton>
         </Box>
       </DialogTitle>
+      <Divider />
       <DialogContent>
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ p: 2 }}>
           {/* Statistics Summary */}
-          <Paper
-            elevation={0}
-            sx={{
-              p: 3,
-              mb: 4,
-              background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(
-                theme.palette.secondary.main,
-                0.1
-              )} 100%)`,
-              borderRadius: 3,
-              border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
-            }}
-          >
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={4}>
-                <Box
-                  sx={{
-                    textAlign: 'center',
-                    p: 2,
-                    borderRadius: 2,
-                    background: alpha(theme.palette.background.paper, 0.6),
-                  }}
-                >
-                  <Typography variant="h4" color="primary.main" fontWeight="bold">
-                    {stats.completionRate.toFixed(1)}%
-                  </Typography>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Completion Rate
-                  </Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <Box
-                  sx={{
-                    textAlign: 'center',
-                    p: 2,
-                    borderRadius: 2,
-                    background: alpha(theme.palette.background.paper, 0.6),
-                  }}
-                >
-                  <Typography variant="h4" color="success.main" fontWeight="bold">
-                    {stats.streakData.currentStreak}
-                  </Typography>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Current Streak
-                  </Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <Box
-                  sx={{
-                    textAlign: 'center',
-                    p: 2,
-                    borderRadius: 2,
-                    background: alpha(theme.palette.background.paper, 0.6),
-                  }}
-                >
-                  <Typography variant="h4" color="error.main" fontWeight="bold">
-                    Rs. {stats.totalFine}
-                  </Typography>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Total Fine
-                  </Typography>
-                </Box>
-              </Grid>
+          <Grid container spacing={2} sx={{ mb: 4 }}>
+            <Grid item xs={4}>
+              <Paper 
+                elevation={0} 
+                sx={{ 
+                  p: 2, 
+                  textAlign: 'center',
+                  border: 1,
+                  borderColor: 'primary.main',
+                  borderRadius: 2
+                }}
+              >
+                <Typography variant="h4" color="primary.main" sx={{ fontWeight: 'bold' }}>
+                  {stats.completionRate.toFixed(0)}%
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Completion
+                </Typography>
+              </Paper>
             </Grid>
-          </Paper>
+            <Grid item xs={4}>
+              <Paper 
+                elevation={0} 
+                sx={{ 
+                  p: 2, 
+                  textAlign: 'center',
+                  border: 1,
+                  borderColor: 'success.main',
+                  borderRadius: 2
+                }}
+              >
+                <Typography variant="h4" color="success.main" sx={{ fontWeight: 'bold' }}>
+                  {stats.streakData.currentStreak}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Streak
+                </Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={4}>
+              <Paper 
+                elevation={0} 
+                sx={{ 
+                  p: 2, 
+                  textAlign: 'center',
+                  border: 1,
+                  borderColor: 'error.main',
+                  borderRadius: 2
+                }}
+              >
+                <Typography variant="h4" color="error.main" sx={{ fontWeight: 'bold' }}>
+                  {stats.totalFine}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Fine (Rs)
+                </Typography>
+              </Paper>
+            </Grid>
+          </Grid>
 
           {/* Prayer Records */}
           <Box>
@@ -220,66 +189,47 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryComponentProps> = ({
                 key={date}
                 elevation={0}
                 sx={{
-                  p: 3,
+                  p: 2,
                   mb: 2,
-                  background: alpha(theme.palette.background.paper, 0.6),
+                  border: 1,
+                  borderColor: 'divider',
                   borderRadius: 2,
-                  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: `0 8px 24px ${alpha(theme.palette.primary.main, 0.1)}`,
-                  },
                 }}
               >
-                <Typography
-                  variant="h6"
-                  gutterBottom
-                  sx={{
-                    color: theme.palette.text.primary,
-                    fontWeight: 'bold',
+                <Typography 
+                  variant="subtitle1" 
+                  sx={{ 
+                    fontWeight: 'medium',
                     mb: 2,
+                    color: 'text.primary'
                   }}
                 >
                   {formatDate(date)}
                 </Typography>
-                <Grid container spacing={2}>
+                <Grid container spacing={1}>
                   {prayerHistory[date].prayers.map((prayer, index) => (
-                    <Grid item xs={12} sm={4} key={index}>
+                    <Grid item xs={6} key={index}>
                       <Box
                         sx={{
                           display: 'flex',
                           alignItems: 'center',
                           gap: 1,
-                          p: 1.5,
-                          borderRadius: 2,
-                          background: prayer.completed
-                            ? alpha(theme.palette.success.main, 0.1)
-                            : alpha(theme.palette.error.main, 0.1),
-                          border: `1px solid ${
-                            prayer.completed
-                              ? alpha(theme.palette.success.main, 0.2)
-                              : alpha(theme.palette.error.main, 0.2)
-                          }`,
+                          p: 1,
+                          borderRadius: 1,
+                          bgcolor: prayer.completed ? 'success.lighter' : 'error.lighter',
                         }}
                       >
                         {prayer.completed ? (
-                          <CheckCircleIcon
-                            sx={{ color: theme.palette.success.main }}
-                          />
+                          <CheckCircleIcon fontSize="small" color="success" />
                         ) : (
-                          <CancelIcon
-                            sx={{ color: theme.palette.error.main }}
-                          />
+                          <CancelIcon fontSize="small" color="error" />
                         )}
                         <Box>
                           <Typography
-                            variant="subtitle1"
+                            variant="body2"
                             sx={{
-                              color: prayer.completed
-                                ? theme.palette.success.main
-                                : theme.palette.error.main,
                               fontWeight: 'medium',
+                              color: prayer.completed ? 'success.dark' : 'error.dark',
                             }}
                           >
                             {prayer.name}
@@ -287,9 +237,9 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryComponentProps> = ({
                           {prayer.fine > 0 && (
                             <Typography
                               variant="caption"
-                              sx={{ color: theme.palette.error.main }}
+                              color="error"
                             >
-                              Fine: Rs. {prayer.fine}
+                              Rs. {prayer.fine}
                             </Typography>
                           )}
                         </Box>
