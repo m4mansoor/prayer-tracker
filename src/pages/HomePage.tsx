@@ -31,10 +31,12 @@ import {
   calculatePrayerTimes,
   getQiblaDirection,
 } from '../utils/prayerUtils';
+import { calculatePrayerStats } from '../utils/analyticsUtils';
 import PrayerHistoryComponent from '../components/PrayerHistory';
 import PaymentHistoryComponent from '../components/PaymentHistory';
 import PrayerTimeSettings from '../components/PrayerTimeSettings';
 import PrayerTimesDisplay from '../components/PrayerTimesDisplay';
+import AnalyticsDashboard from '../components/AnalyticsDashboard';
 
 const HomePage: React.FC = () => {
   const [prayerHistory, setPrayerHistory] = useState<PrayerHistory>(() => {
@@ -366,6 +368,12 @@ const HomePage: React.FC = () => {
             ))}
           </Grid>
         </Paper>
+
+        {/* Analytics Dashboard */}
+        <AnalyticsDashboard
+          history={prayerHistory}
+          stats={calculatePrayerStats(prayerHistory)}
+        />
 
         {/* Prayer History Component */}
         <PrayerHistoryComponent 
