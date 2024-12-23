@@ -29,16 +29,10 @@ const HomePage: React.FC = () => {
   }, []);
 
   const handlePrayerToggle = (prayerName: string) => {
-    const updatedPrayers = todaysPrayers.map(prayer =>
-      prayer.name === prayerName
-        ? { ...prayer, completed: !prayer.completed }
-        : prayer
-    );
-    setTodaysPrayers(updatedPrayers);
-    
     const { updatedHistory } = updatePrayerStatus(prayerHistory, prayerName);
     setPrayerHistory(updatedHistory);
     localStorage.setItem('prayerHistory', JSON.stringify(updatedHistory));
+    setTodaysPrayers(getTodaysPrayers());
   };
 
   return (
