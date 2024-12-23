@@ -24,15 +24,19 @@ import PendingIcon from '@mui/icons-material/Pending';
 import SentimentSatisfiedAltIcon from '@mui/icons-material/SentimentSatisfiedAlt';
 import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDissatisfied';
 import { v4 as uuidv4 } from 'uuid';
-import { Prayer, PrayerHistory, PaymentHistory } from '../types';
+import { Prayer, PrayerHistory, PaymentHistory, PrayerSettings, UserPreferences, PrayerTimes } from '../types';
 import {
   DEFAULT_PRAYERS,
   getToday,
   createDailyPrayers,
   updateDailyPrayers,
+  calculatePrayerTimes,
+  getQiblaDirection,
 } from '../utils/prayerUtils';
 import PrayerHistoryComponent from '../components/PrayerHistory';
 import PaymentHistoryComponent from '../components/PaymentHistory';
+import PrayerTimeSettings from '../components/PrayerTimeSettings';
+import PrayerTimesDisplay from '../components/PrayerTimesDisplay';
 
 const HomePage: React.FC = () => {
   const [prayerHistory, setPrayerHistory] = useState<PrayerHistory>(() => {
@@ -55,6 +59,37 @@ const HomePage: React.FC = () => {
       totalPaid: 0,
     };
   });
+
+  const [prayerSettings, setPrayerSettings] = useState<PrayerSettings>(() => {
+    const saved = localStorage.getItem('prayerSettings');
+    return saved ? JSON.parse(saved) : {
+      location: { latitude: 0, longitude: 0 },
+      calculationMethod: 'MuslimWorldLeague',
+      asrMethod: 'Standard',
+      adjustments: {
+        fajr: 0,
+        sunrise: 0,
+        dhuhr: 0,
+        asr: 0,
+        maghrib: 0,
+        isha: 0,
+      },
+    };
+  });
+
+  const [userPreferences, setUserPreferences] = useState<UserPreferences>(() => {
+    const saved = localStorage.getItem('userPreferences');
+    return saved ? JSON.parse(saved) : {
+      theme: 'light',
+      language: 'en',
+      notificationsEnabled: false,
+      notificationSound: true,
+      notificationTime: 15,
+    };
+  });
+
+  const [prayerTimes, setPrayerTimes] = useState<PrayerTimes | null>(null);
+  const [qiblaDirection, setQiblaDirection] = useState<number>(0);
 
   const today = getToday();
   const todaysPrayers = prayerHistory[today]?.prayers || DEFAULT_PRAYERS;
@@ -82,6 +117,26 @@ const HomePage: React.FC = () => {
     // Save payment history to localStorage
     localStorage.setItem('paymentHistory', JSON.stringify(paymentHistory));
   }, [paymentHistory]);
+
+  useEffect(() => {
+    localStorage.setItem('prayerSettings', JSON.stringify(prayerSettings));
+    localStorage.setItem('userPreferences', JSON.stringify(userPreferences));
+
+    // Calculate prayer times for today
+    const times = calculatePrayerTimes(new Date(), prayerSettings);
+    setPrayerTimes(times);
+
+    // Calculate Qibla direction
+    const qibla = getQiblaDirection(prayerSettings.location);
+    setQiblaDirection(qibla);
+  }, [prayerSettings, userPreferences]);
+
+  // Request notification permission when enabled
+  useEffect(() => {
+    if (userPreferences.notificationsEnabled) {
+      Notification.requestPermission();
+    }
+  }, [userPreferences.notificationsEnabled]);
 
   const handlePrayerComplete = async (prayerName: string) => {
     try {
@@ -156,9 +211,38 @@ const HomePage: React.FC = () => {
     setPaymentDialogOpen(false);
   };
 
+  const handleSettingsChange = (newSettings: PrayerSettings) => {
+    setPrayerSettings(newSettings);
+  };
+
+  const handleNotificationSettingsChange = (enabled: boolean, time: number) => {
+    setUserPreferences(prev => ({
+      ...prev,
+      notificationsEnabled: enabled,
+      notificationTime: time,
+    }));
+  };
+
   return (
     <Box className="islamic-pattern" sx={{ minHeight: '100vh', py: 4, backgroundColor: 'background.default' }}>
       <Container maxWidth="lg">
+        {/* Prayer Times Display */}
+        {prayerTimes && (
+          <PrayerTimesDisplay
+            prayerTimes={prayerTimes}
+            qiblaDirection={qiblaDirection}
+          />
+        )}
+
+        {/* Prayer Time Settings */}
+        <PrayerTimeSettings
+          settings={prayerSettings}
+          onSettingsChange={handleSettingsChange}
+          notificationsEnabled={userPreferences.notificationsEnabled}
+          notificationTime={userPreferences.notificationTime}
+          onNotificationSettingsChange={handleNotificationSettingsChange}
+        />
+
         {/* Today's Prayers Section */}
         <Paper 
           elevation={3} 
