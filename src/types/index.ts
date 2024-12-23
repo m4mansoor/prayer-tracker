@@ -38,8 +38,8 @@ export interface Prayer {
   name: string;
   time?: string;
   completed: boolean;
-  completedOnTime?: boolean;
   fine?: number;
+  completedOnTime?: boolean;
 }
 
 export interface DailyPrayers {

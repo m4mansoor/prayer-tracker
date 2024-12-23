@@ -12,27 +12,11 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
-import { PrayerHistory as PrayerHistoryType, DailyPrayers, Prayer } from '../types';
+import { PrayerHistory as PrayerHistoryType, PrayerStats } from '../types';
 
 interface PrayerHistoryComponentProps {
   prayerHistory: PrayerHistoryType;
   onClose: () => void;
-}
-
-interface PrayerStats {
-  totalPrayers: number;
-  completedPrayers: number;
-  missedPrayers: number;
-  totalFine: number;
-  completionRate: number;
-  streakData: {
-    currentStreak: number;
-    longestStreak: number;
-  };
-  timeAnalysis: {
-    onTime: number;
-    delayed: number;
-  };
 }
 
 const PrayerHistoryComponent: React.FC<PrayerHistoryComponentProps> = ({
@@ -146,6 +130,14 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryComponentProps> = ({
               <Grid item xs={12} sm={4}>
                 <Typography variant="h6">Total Fine</Typography>
                 <Typography>Rs. {stats.totalFine}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="h6">Current Streak</Typography>
+                <Typography>{stats.streakData.currentStreak} days</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="h6">Longest Streak</Typography>
+                <Typography>{stats.streakData.longestStreak} days</Typography>
               </Grid>
             </Grid>
           </Paper>
