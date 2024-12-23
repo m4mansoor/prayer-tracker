@@ -1,6 +1,6 @@
 import { Prayer, DailyPrayers, PrayerHistory } from '../types';
 
-const DEFAULT_PRAYERS: DailyPrayers = [
+const DEFAULT_PRAYERS: Prayer[] = [
   { name: 'Fajr', time: '05:30', completed: false },
   { name: 'Zuhr', time: '13:30', completed: false },
   { name: 'Asr', time: '16:30', completed: false },
@@ -12,7 +12,7 @@ export const getToday = (): string => {
   return new Date().toISOString().split('T')[0];
 };
 
-export const getTodaysPrayers = (): DailyPrayers => {
+export const getTodaysPrayers = (): Prayer[] => {
   const today = getToday();
   const storedHistory = localStorage.getItem('prayerHistory');
   if (storedHistory) {
@@ -34,7 +34,7 @@ export const updatePrayerStatus = (
   if (!updatedHistory[today]) {
     updatedHistory[today] = {
       date: today,
-      prayers: DEFAULT_PRAYERS,
+      prayers: DEFAULT_PRAYERS.map(p => ({ ...p })),
       totalCompleted: 0,
       totalFine: 0
     };
