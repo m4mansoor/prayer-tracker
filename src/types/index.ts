@@ -36,10 +36,11 @@ export interface UserPreferences {
 
 export interface Prayer {
   name: string;
-  time?: string;
+  time: string;
   completed: boolean;
-  fine?: number;
   completedOnTime?: boolean;
+  fine?: number;
+  completedAt?: string;
 }
 
 export interface DailyPrayers {
@@ -73,6 +74,31 @@ export interface PrayerStats {
   timeAnalysis: {
     onTime: number;
     delayed: number;
+  };
+}
+
+export interface PrayerReport {
+  startDate: string;
+  endDate: string;
+  totalPrayers: number;
+  completedPrayers: number;
+  missedPrayers: number;
+  totalFine: number;
+  completionRate: number;
+  prayerBreakdown: {
+    [prayerName: string]: {
+      total: number;
+      completed: number;
+      completionRate: number;
+      totalFine: number;
+    };
+  };
+  dailyStats: {
+    [date: string]: {
+      completed: number;
+      total: number;
+      fine: number;
+    };
   };
 }
 

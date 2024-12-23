@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Divider,
 } from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import EditIcon from '@mui/icons-material/Edit';
@@ -23,6 +24,7 @@ import SentimentSatisfiedAltIcon from '@mui/icons-material/SentimentSatisfiedAlt
 import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDissatisfied';
 import { Prayer, PrayerHistory } from '../types';
 import PrayerHistoryComponent from '../components/PrayerHistory';
+import PrayerReports from '../components/PrayerReports';
 import { getTodaysPrayers, updatePrayerStatus } from '../utils/prayerUtils';
 
 const HomePage: React.FC = () => {
@@ -74,6 +76,15 @@ const HomePage: React.FC = () => {
     setEditingPrayer(null);
   };
 
+  const calculateTodaysFine = () => {
+    return todaysPrayers.reduce((total, prayer) => {
+      if (!prayer.completed) {
+        return total + 10; // 10 rupees fine for each missed prayer
+      }
+      return total;
+    }, 0);
+  };
+
   return (
     <Box
       sx={{
@@ -85,7 +96,7 @@ const HomePage: React.FC = () => {
         py: 4,
       }}
     >
-      <Container maxWidth="sm">
+      <Container maxWidth="lg">
         <Box sx={{ mb: 6, textAlign: 'center' }}>
           <Typography 
             variant="h3" 
@@ -109,28 +120,11 @@ const HomePage: React.FC = () => {
           >
             Track your daily prayers
           </Typography>
-          <Button
-            variant="contained"
-            startIcon={<HistoryIcon />}
-            onClick={() => setShowHistory(true)}
-            sx={{ 
-              borderRadius: 2,
-              textTransform: 'none',
-              px: 4,
-              py: 1,
-              background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-              '&:hover': {
-                background: `linear-gradient(135deg, ${theme.palette.primary.dark}, ${theme.palette.secondary.dark})`,
-              },
-            }}
-          >
-            Prayer History
-          </Button>
         </Box>
 
-        <Grid container spacing={3}>
+        <Grid container spacing={3} sx={{ mb: 6 }}>
           {todaysPrayers.map((prayer) => (
-            <Grid item xs={12} key={prayer.name}>
+            <Grid item xs={12} sm={6} md={4} key={prayer.name}>
               <Card 
                 sx={{ 
                   borderRadius: 3,
@@ -226,6 +220,63 @@ const HomePage: React.FC = () => {
             </Grid>
           ))}
         </Grid>
+
+        {/* Today's Fine Section */}
+        <Box sx={{ mb: 6 }}>
+          <Card
+            sx={{
+              borderRadius: 3,
+              background: `linear-gradient(135deg, ${alpha(theme.palette.warning.light, 0.1)}, ${alpha(
+                theme.palette.warning.main,
+                0.2
+              )})`,
+            }}
+          >
+            <CardContent sx={{ p: 3 }}>
+              <Grid container alignItems="center" spacing={2}>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="h6" color="warning.main" fontWeight="bold">
+                    Today's Fine
+                  </Typography>
+                  <Typography color="text.secondary">
+                    Rs. 10 fine for each missed prayer
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} md={6} sx={{ textAlign: 'right' }}>
+                  <Typography variant="h4" color="warning.main" fontWeight="bold">
+                    Rs. {calculateTodaysFine()}
+                  </Typography>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Box>
+
+        {/* View History Button */}
+        <Box sx={{ mb: 6, textAlign: 'center' }}>
+          <Button
+            variant="contained"
+            startIcon={<HistoryIcon />}
+            onClick={() => setShowHistory(true)}
+            sx={{ 
+              borderRadius: 2,
+              textTransform: 'none',
+              px: 4,
+              py: 1,
+              background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+              '&:hover': {
+                background: `linear-gradient(135deg, ${theme.palette.primary.dark}, ${theme.palette.secondary.dark})`,
+              },
+            }}
+          >
+            View Prayer History
+          </Button>
+        </Box>
+
+        <Divider sx={{ my: 6 }} />
+
+        {/* Reports Section */}
+        <PrayerReports prayerHistory={prayerHistory} />
       </Container>
 
       {showHistory && (
