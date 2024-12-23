@@ -17,32 +17,36 @@ export const formatDate = (date: Date): string => {
   return format(date, 'yyyy-MM-dd');
 };
 
-export const createDailyPrayers = (): DailyPrayers => {
-  return {
-    prayers: [...DEFAULT_PRAYERS],
-    totalCompleted: 0,
-    totalFine: 0,
-  };
-};
+export const createDailyPrayers = (): DailyPrayers => ({
+  date: getToday(),
+  prayers: DEFAULT_PRAYERS.map(prayer => ({
+    ...prayer,
+    completed: false
+  })),
+  totalCompleted: 0,
+  totalFine: 0
+});
 
 export const updateDailyPrayers = (
-  dailyPrayers: DailyPrayers,
+  dayData: DailyPrayers,
   prayerName: string,
   completed: boolean
 ): DailyPrayers => {
-  const updatedPrayers = dailyPrayers.prayers.map(prayer =>
+  const updatedPrayers = dayData.prayers.map(prayer =>
     prayer.name === prayerName ? { ...prayer, completed } : prayer
   );
 
   const totalCompleted = updatedPrayers.filter(p => p.completed).length;
-  const totalFine = updatedPrayers.reduce((acc, prayer) => 
-    acc + (prayer.completed ? 0 : prayer.fineAmount), 0
+  const totalFine = updatedPrayers.reduce(
+    (sum, prayer) => sum + (prayer.completed ? 0 : prayer.fineAmount),
+    0
   );
 
   return {
+    date: dayData.date,
     prayers: updatedPrayers,
     totalCompleted,
-    totalFine,
+    totalFine
   };
 };
 

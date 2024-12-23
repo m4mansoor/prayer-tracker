@@ -36,13 +36,11 @@ export interface UserPreferences {
 
 export interface Prayer {
   name: string;
-  arabicName?: string;
-  completed: boolean;
+  arabicName: string;
   startTime: string;
   endTime: string;
+  completed: boolean;
   fineAmount: number;
-  calculatedTime?: Date;
-  notified?: boolean;
 }
 
 export interface DailyPrayers {
@@ -50,47 +48,38 @@ export interface DailyPrayers {
   prayers: Prayer[];
   totalCompleted: number;
   totalFine: number;
-  prayerTimes?: PrayerTimes;
 }
 
 export interface PrayerHistory {
   [date: string]: DailyPrayers;
 }
 
-export interface BasicStats {
+export interface PrayerStats {
   totalPrayers: number;
   completedPrayers: number;
   missedPrayers: number;
   totalFine: number;
   completionRate: number;
-}
-
-export interface PrayerStats extends BasicStats {
-  streakData: {
+  streakData?: {
     currentStreak: number;
     longestStreak: number;
-    lastCompletedDate: string;
   };
-  timeAnalysis: {
-    averageDelay: number;
+  timeAnalysis?: {
     mostMissedPrayer: string;
     bestPerformingDay: string;
   };
 }
 
-export interface PaymentRecord {
+export interface Payment {
   id: string;
   amount: number;
   date: string;
   remainingBalance: number;
-  paymentMethod?: string;
-  notes?: string;
 }
 
 export interface PaymentHistory {
-  records: PaymentRecord[];
+  records: Payment[];
   totalPaid: number;
-  lastPayment?: PaymentRecord;
 }
 
 export interface DateRange {
