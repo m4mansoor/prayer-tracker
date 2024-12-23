@@ -1,189 +1,111 @@
 import React, { useState, useEffect } from 'react';
 import {
   Container,
+  Typography,
+  Box,
   Grid,
   Card,
   CardContent,
-  Typography,
-  CardActions,
-  Button,
-  Box,
-  Paper,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
   IconButton,
-  Divider,
+  Button,
 } from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
-import MosqueIcon from '@mui/icons-material/Mosque';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import PendingIcon from '@mui/icons-material/Pending';
-import SentimentSatisfiedAltIcon from '@mui/icons-material/SentimentSatisfiedAlt';
-import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDissatisfied';
-import { v4 as uuidv4 } from 'uuid';
-import { Prayer, PrayerHistory, PaymentHistory } from '../types';
-import {
-  DEFAULT_PRAYERS,
-  getToday,
-  createDailyPrayers,
-  updateDailyPrayers,
-} from '../utils/prayerUtils';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import HistoryIcon from '@mui/icons-material/History';
+import { Prayer, PrayerHistory } from '../types';
 import PrayerHistoryComponent from '../components/PrayerHistory';
-import PaymentHistoryComponent from '../components/PaymentHistory';
+import { getTodaysPrayers, updatePrayerStatus } from '../utils/prayerUtils';
 
 const HomePage: React.FC = () => {
-  // Initialize prayer history with today's prayers
-  const [prayerHistory, setPrayerHistory] = useState<PrayerHistory>(() => {
-    const savedHistory = localStorage.getItem('prayerHistory');
-    if (savedHistory) {
-      return JSON.parse(savedHistory);
-    }
-    const today = getToday();
-    return {
-      [today]: createDailyPrayers(today)
-    };
-  });
-
-  // Initialize payment history
-  const [paymentHistory, setPaymentHistory] = useState<PaymentHistory>(() => {
-    const savedPayments = localStorage.getItem('paymentHistory');
-    return savedPayments ? JSON.parse(savedPayments) : [];
-  });
-
-  const [selectedPrayer, setSelectedPrayer] = useState<Prayer | null>(null);
-  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [todaysPrayers, setTodaysPrayers] = useState<Prayer[]>([]);
+  const [prayerHistory, setPrayerHistory] = useState<PrayerHistory>({});
   const [showHistory, setShowHistory] = useState(false);
-  const [showPaymentHistory, setShowPaymentHistory] = useState(false);
 
-  // Save prayer history to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('prayerHistory', JSON.stringify(prayerHistory));
-  }, [prayerHistory]);
-
-  // Save payment history to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('paymentHistory', JSON.stringify(paymentHistory));
-  }, [paymentHistory]);
-
-  // Handle prayer completion toggle
-  const handlePrayerToggle = (prayer: Prayer) => {
-    const today = getToday();
-    const updatedHistory = { ...prayerHistory };
-    
-    if (!updatedHistory[today]) {
-      updatedHistory[today] = createDailyPrayers(today);
+    const storedHistory = localStorage.getItem('prayerHistory');
+    if (storedHistory) {
+      setPrayerHistory(JSON.parse(storedHistory));
     }
-    
-    const dayPrayers = updatedHistory[today].prayers.map(p => 
-      p.name === prayer.name ? { ...p, completed: !p.completed } : p
+    setTodaysPrayers(getTodaysPrayers());
+  }, []);
+
+  const handlePrayerToggle = (prayerName: string) => {
+    const updatedPrayers = todaysPrayers.map(prayer =>
+      prayer.name === prayerName
+        ? { ...prayer, completed: !prayer.completed }
+        : prayer
     );
+    setTodaysPrayers(updatedPrayers);
     
-    updatedHistory[today] = {
-      ...updatedHistory[today],
-      prayers: dayPrayers
-    };
-    
+    const { updatedHistory } = updatePrayerStatus(prayerHistory, prayerName);
     setPrayerHistory(updatedHistory);
+    localStorage.setItem('prayerHistory', JSON.stringify(updatedHistory));
   };
 
-  // Get today's prayers
-  const today = getToday();
-  const todaysPrayers = prayerHistory[today]?.prayers || createDailyPrayers(today).prayers;
-
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom align="center">
-        Qunoot Prayer Tracker
-      </Typography>
+    <Container maxWidth="md">
+      <Box sx={{ mt: 4, mb: 4 }}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+          <Typography variant="h4" component="h1">
+            Today's Prayers
+          </Typography>
+          <Button
+            variant="outlined"
+            startIcon={<HistoryIcon />}
+            onClick={() => setShowHistory(true)}
+          >
+            History
+          </Button>
+        </Box>
 
-      {/* Today's Prayers Section */}
-      <Paper 
-        elevation={3} 
-        sx={{ 
-          p: 3, 
-          mb: 3, 
-          backgroundColor: 'background.paper',
-          borderRadius: 2
-        }}
-      >
-        <Typography variant="h5" gutterBottom>
-          Today's Prayers
-        </Typography>
-        <Grid container spacing={2}>
+        <Grid container spacing={3}>
           {todaysPrayers.map((prayer) => (
             <Grid item xs={12} sm={6} md={4} key={prayer.name}>
               <Card 
-                sx={{ 
+                sx={{
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
-                  backgroundColor: prayer.completed ? '#e8f5e9' : 'background.paper'
+                  position: 'relative',
+                  transition: 'transform 0.2s',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                  },
                 }}
               >
                 <CardContent>
-                  <Typography variant="h6" component="h2">
-                    {prayer.name}
-                  </Typography>
-                  <Box sx={{ mt: 2, display: 'flex', alignItems: 'center' }}>
-                    {prayer.completed ? (
-                      <SentimentSatisfiedAltIcon color="success" />
-                    ) : (
-                      <SentimentVeryDissatisfiedIcon color="error" />
-                    )}
-                    <Typography sx={{ ml: 1 }}>
-                      {prayer.completed ? 'Completed' : 'Pending'}
+                  <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Typography variant="h6" component="h2">
+                      {prayer.name}
                     </Typography>
+                    <IconButton
+                      onClick={() => handlePrayerToggle(prayer.name)}
+                      color={prayer.completed ? "success" : "default"}
+                      sx={{ 
+                        transition: 'all 0.2s',
+                        '&:hover': {
+                          transform: 'scale(1.1)',
+                        }
+                      }}
+                    >
+                      <CheckCircleOutlineIcon />
+                    </IconButton>
                   </Box>
+                  {prayer.time && (
+                    <Typography color="textSecondary" sx={{ mt: 1 }}>
+                      Time: {prayer.time}
+                    </Typography>
+                  )}
                 </CardContent>
-                <CardActions>
-                  <Button
-                    size="small"
-                    onClick={() => handlePrayerToggle(prayer)}
-                    startIcon={prayer.completed ? <CheckCircleIcon /> : <PendingIcon />}
-                  >
-                    {prayer.completed ? 'Mark Incomplete' : 'Mark Complete'}
-                  </Button>
-                </CardActions>
               </Card>
             </Grid>
           ))}
         </Grid>
-      </Paper>
-
-      {/* History Buttons */}
-      <Box sx={{ mb: 3, display: 'flex', gap: 2, justifyContent: 'center' }}>
-        <Button
-          variant="contained"
-          onClick={() => setShowHistory(true)}
-          startIcon={<MosqueIcon />}
-        >
-          View Prayer History
-        </Button>
-        <Button
-          variant="outlined"
-          onClick={() => setShowPaymentHistory(true)}
-          startIcon={<EditIcon />}
-        >
-          View Payment History
-        </Button>
       </Box>
 
-      {/* Prayer History */}
       {showHistory && (
         <PrayerHistoryComponent
           prayerHistory={prayerHistory}
           onClose={() => setShowHistory(false)}
-        />
-      )}
-
-      {/* Payment History */}
-      {showPaymentHistory && (
-        <PaymentHistoryComponent
-          paymentHistory={paymentHistory}
-          onClose={() => setShowPaymentHistory(false)}
         />
       )}
     </Container>

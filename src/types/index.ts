@@ -36,11 +36,10 @@ export interface UserPreferences {
 
 export interface Prayer {
   name: string;
-  arabicName: string;
-  startTime: string;
-  endTime: string;
+  time?: string;
   completed: boolean;
-  fineAmount: number;
+  completedOnTime?: boolean;
+  fine?: number;
 }
 
 export interface DailyPrayers {
@@ -54,19 +53,26 @@ export interface PrayerHistory {
   [date: string]: DailyPrayers;
 }
 
+export interface PrayerTimeSettings {
+  method: string;
+  school: string;
+  latitude: number;
+  longitude: number;
+}
+
 export interface PrayerStats {
   totalPrayers: number;
   completedPrayers: number;
   missedPrayers: number;
   totalFine: number;
   completionRate: number;
-  streakData?: {
+  streakData: {
     currentStreak: number;
     longestStreak: number;
   };
-  timeAnalysis?: {
-    mostMissedPrayer: string;
-    bestPerformingDay: string;
+  timeAnalysis: {
+    onTime: number;
+    delayed: number;
   };
 }
 

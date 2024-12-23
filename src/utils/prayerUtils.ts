@@ -1,128 +1,63 @@
-import { Prayer, DailyPrayers, PrayerHistory, FilterOptions } from '../types';
-import { format, subDays, isWithinInterval, parseISO } from 'date-fns';
+import { Prayer, DailyPrayers, PrayerHistory } from '../types';
 
-export const DEFAULT_PRAYERS: Prayer[] = [
-  { name: 'Fajr', arabicName: 'الفجر', startTime: '04:30', endTime: '05:45', completed: false, fineAmount: 10 },
-  { name: 'Dhuhr', arabicName: 'الظهر', startTime: '12:00', endTime: '13:30', completed: false, fineAmount: 10 },
-  { name: 'Asr', arabicName: 'العصر', startTime: '15:30', endTime: '16:45', completed: false, fineAmount: 10 },
-  { name: 'Maghrib', arabicName: 'المغرب', startTime: '18:00', endTime: '19:15', completed: false, fineAmount: 10 },
-  { name: 'Isha', arabicName: 'العشاء', startTime: '19:45', endTime: '21:00', completed: false, fineAmount: 10 },
+const DEFAULT_PRAYERS: Prayer[] = [
+  { name: 'Fajr', time: '05:30', completed: false },
+  { name: 'Zuhr', time: '13:30', completed: false },
+  { name: 'Asr', time: '16:30', completed: false },
+  { name: 'Maghrib', time: '18:30', completed: false },
+  { name: 'Isha', time: '20:00', completed: false }
 ];
 
 export const getToday = (): string => {
-  return format(new Date(), 'yyyy-MM-dd');
+  return new Date().toISOString().split('T')[0];
 };
 
-export const formatDate = (date: Date): string => {
-  return format(date, 'yyyy-MM-dd');
+export const getTodaysPrayers = (): Prayer[] => {
+  const today = getToday();
+  const storedHistory = localStorage.getItem('prayerHistory');
+  if (storedHistory) {
+    const history: PrayerHistory = JSON.parse(storedHistory);
+    if (history[today]) {
+      return history[today].prayers;
+    }
+  }
+  return DEFAULT_PRAYERS;
 };
 
-export const createDailyPrayers = (): DailyPrayers => ({
-  date: getToday(),
-  prayers: DEFAULT_PRAYERS.map(prayer => ({
-    ...prayer,
-    completed: false
-  })),
-  totalCompleted: 0,
-  totalFine: 0
-});
+export const updatePrayerStatus = (
+  history: PrayerHistory,
+  prayerName: string
+): { updatedHistory: PrayerHistory } => {
+  const today = getToday();
+  const updatedHistory = { ...history };
 
-export const updateDailyPrayers = (
-  dayData: DailyPrayers,
-  prayerName: string,
-  completed: boolean
-): DailyPrayers => {
-  const updatedPrayers = dayData.prayers.map(prayer =>
-    prayer.name === prayerName ? { ...prayer, completed } : prayer
-  );
+  if (!updatedHistory[today]) {
+    updatedHistory[today] = {
+      date: today,
+      prayers: DEFAULT_PRAYERS,
+      totalCompleted: 0,
+      totalFine: 0
+    };
+  }
+
+  const updatedPrayers = updatedHistory[today].prayers.map(prayer => {
+    if (prayer.name === prayerName) {
+      const completed = !prayer.completed;
+      const fine = completed ? 0 : 10; // 10 rupees fine for missed prayers
+      return { ...prayer, completed, fine };
+    }
+    return prayer;
+  });
 
   const totalCompleted = updatedPrayers.filter(p => p.completed).length;
-  const totalFine = updatedPrayers.reduce(
-    (sum, prayer) => sum + (prayer.completed ? 0 : prayer.fineAmount),
-    0
-  );
+  const totalFine = updatedPrayers.reduce((sum, p) => sum + (p.fine || 0), 0);
 
-  return {
-    date: dayData.date,
+  updatedHistory[today] = {
+    date: today,
     prayers: updatedPrayers,
     totalCompleted,
     totalFine
   };
-};
 
-export const getDateRangeForFilter = (filterType: FilterOptions['filterType']): { startDate: string; endDate: string } => {
-  const today = new Date();
-  const endDate = formatDate(today);
-
-  switch (filterType) {
-    case 'day':
-      return {
-        startDate: endDate,
-        endDate: endDate,
-      };
-    case 'week':
-      return {
-        startDate: formatDate(subDays(today, 7)),
-        endDate: endDate,
-      };
-    case 'month':
-      return {
-        startDate: formatDate(subDays(today, 30)),
-        endDate: endDate,
-      };
-    case 'custom':
-      return {
-        startDate: endDate,
-        endDate: endDate,
-      };
-    default:
-      return {
-        startDate: endDate,
-        endDate: endDate,
-      };
-  }
-};
-
-export const filterPrayerHistory = (
-  history: PrayerHistory,
-  filterOptions: FilterOptions
-): PrayerHistory => {
-  const { dateRange, showCompleted, showMissed } = filterOptions;
-  const startDate = parseISO(dateRange.startDate);
-  const endDate = parseISO(dateRange.endDate);
-
-  return Object.entries(history).reduce((filtered, [date, dayData]) => {
-    const currentDate = parseISO(date);
-
-    // Check if the date is within the selected range
-    if (!isWithinInterval(currentDate, { start: startDate, end: endDate })) {
-      return filtered;
-    }
-
-    // Filter prayers based on completion status
-    const filteredPrayers = dayData.prayers.filter(prayer => {
-      if (prayer.completed && !showCompleted) return false;
-      if (!prayer.completed && !showMissed) return false;
-      return true;
-    });
-
-    if (filteredPrayers.length === 0) {
-      return filtered;
-    }
-
-    // Calculate new totals for filtered prayers
-    const totalCompleted = filteredPrayers.filter(p => p.completed).length;
-    const totalFine = filteredPrayers.reduce((acc, prayer) => 
-      acc + (prayer.completed ? 0 : prayer.fineAmount), 0
-    );
-
-    return {
-      ...filtered,
-      [date]: {
-        prayers: filteredPrayers,
-        totalCompleted,
-        totalFine,
-      },
-    };
-  }, {} as PrayerHistory);
+  return { updatedHistory };
 };
