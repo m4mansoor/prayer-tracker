@@ -3,21 +3,13 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   IconButton,
   Typography,
   Box,
   Grid,
+  Paper,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import SentimentSatisfiedAltIcon from '@mui/icons-material/SentimentSatisfiedAlt';
-import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDissatisfied';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { PrayerHistory as PrayerHistoryType, DailyPrayers, Prayer } from '../types';
@@ -133,17 +125,13 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryComponentProps> = ({
       <DialogTitle>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="h6">Prayer History</Typography>
-          <IconButton onClick={onClose} size="small">
+          <IconButton onClick={onClose}>
             <CloseIcon />
           </IconButton>
         </Box>
       </DialogTitle>
       <DialogContent>
         <Box sx={{ p: 3 }}>
-          <Typography variant="h4" gutterBottom>
-            Prayer History
-          </Typography>
-
           {/* Statistics Summary */}
           <Paper elevation={3} sx={{ p: 2, mb: 3 }}>
             <Grid container spacing={2}>
