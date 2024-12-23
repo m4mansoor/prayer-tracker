@@ -1,0 +1,11 @@
+{
+  "git": {
+    "deploymentEnabled": {
+      "main": false,
+      "pwa": true
+    }
+  },
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist"
+}
