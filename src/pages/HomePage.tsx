@@ -109,7 +109,7 @@ const HomePage: React.FC = () => {
               WebkitTextFillColor: 'transparent',
             }}
           >
-            Qunoot
+            Qunoot Prayer Tracker
           </Typography>
           <Typography 
             variant="subtitle1" 
