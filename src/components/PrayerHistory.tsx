@@ -1,98 +1,95 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
   DialogContent,
-  IconButton,
-  Typography,
   Box,
+  Typography,
+  IconButton,
   Grid,
-  Paper,
+  Card,
+  CardContent,
   useTheme,
-  Divider,
+  alpha,
+  ToggleButtonGroup,
+  ToggleButton,
+  Button,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import EditIcon from '@mui/icons-material/Edit';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
-import { PrayerHistory as PrayerHistoryType, PrayerStats } from '../types';
+import DateRangeIcon from '@mui/icons-material/DateRange';
+import { Prayer, PrayerHistory } from '../types';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 
-interface PrayerHistoryComponentProps {
-  prayerHistory: PrayerHistoryType;
+interface PrayerHistoryProps {
+  prayerHistory: PrayerHistory;
   onClose: () => void;
 }
 
-const PrayerHistoryComponent: React.FC<PrayerHistoryComponentProps> = ({
+type DateRange = 'daily' | 'weekly' | 'monthly' | 'custom';
+
+const PrayerHistoryComponent: React.FC<PrayerHistoryProps> = ({
   prayerHistory,
   onClose,
 }) => {
   const theme = useTheme();
-  const sortedDates = Object.keys(prayerHistory).sort((a, b) =>
-    new Date(b).getTime() - new Date(a).getTime()
-  );
+  const [dateRange, setDateRange] = useState<DateRange>('daily');
+  const [customRange, setCustomRange] = useState<{ start: string; end: string }>({
+    start: '',
+    end: '',
+  });
+  const [editingPrayer, setEditingPrayer] = useState<{
+    date: string;
+    prayer: Prayer;
+  } | null>(null);
 
-  const calculateStats = (): PrayerStats => {
-    let totalPrayers = 0;
-    let completedPrayers = 0;
-    let totalFine = 0;
-    let currentStreak = 0;
-    let longestStreak = 0;
-    let onTimePrayers = 0;
-    let delayedPrayers = 0;
+  const getDateRange = () => {
+    const now = new Date();
+    let start = now;
+    let end = now;
 
-    Object.values(prayerHistory).forEach((day) => {
-      day.prayers.forEach((prayer) => {
-        totalPrayers++;
-        if (prayer.completed) {
-          completedPrayers++;
-          if (prayer.completedOnTime) {
-            onTimePrayers++;
-          } else {
-            delayedPrayers++;
-          }
+    switch (dateRange) {
+      case 'daily':
+        break;
+      case 'weekly':
+        start = startOfWeek(now);
+        end = endOfWeek(now);
+        break;
+      case 'monthly':
+        start = startOfMonth(now);
+        end = endOfMonth(now);
+        break;
+      case 'custom':
+        if (customRange.start && customRange.end) {
+          start = new Date(customRange.start);
+          end = new Date(customRange.end);
         }
-        if (prayer.fine) {
-          totalFine += prayer.fine;
-        }
-      });
+        break;
+    }
 
-      const allCompleted = day.prayers.every((p) => p.completed);
-      if (allCompleted) {
-        currentStreak++;
-        longestStreak = Math.max(longestStreak, currentStreak);
-      } else {
-        currentStreak = 0;
-      }
-    });
-
-    const missedPrayers = totalPrayers - completedPrayers;
-    const completionRate = totalPrayers > 0 ? (completedPrayers / totalPrayers) * 100 : 0;
-
-    return {
-      totalPrayers,
-      completedPrayers,
-      missedPrayers,
-      totalFine,
-      completionRate,
-      streakData: {
-        currentStreak,
-        longestStreak,
-      },
-      timeAnalysis: {
-        onTime: onTimePrayers,
-        delayed: delayedPrayers,
-      },
-    };
+    return { start, end };
   };
 
-  const stats = calculateStats();
+  const togglePrayerStatus = (date: string, prayerName: string) => {
+    const prayers = prayerHistory[date]?.prayers || [];
+    const updatedPrayers = prayers.map((prayer) =>
+      prayer.name === prayerName
+        ? { ...prayer, completed: !prayer.completed }
+        : prayer
+    );
 
-  const formatDate = (dateStr: string): string => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-    });
+    const updatedHistory = {
+      ...prayerHistory,
+      [date]: {
+        ...prayerHistory[date],
+        prayers: updatedPrayers,
+      },
+    };
+
+    localStorage.setItem('prayerHistory', JSON.stringify(updatedHistory));
+    window.location.reload(); // Refresh to update all components
   };
 
   return (
@@ -121,135 +118,132 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryComponentProps> = ({
       <Divider />
       <DialogContent>
         <Box sx={{ p: 2 }}>
-          {/* Statistics Summary */}
-          <Grid container spacing={2} sx={{ mb: 4 }}>
-            <Grid item xs={4}>
-              <Paper 
-                elevation={0} 
-                sx={{ 
-                  p: 2, 
-                  textAlign: 'center',
-                  border: 1,
-                  borderColor: 'primary.main',
-                  borderRadius: 2
-                }}
-              >
-                <Typography variant="h4" color="primary.main" sx={{ fontWeight: 'bold' }}>
-                  {stats.completionRate.toFixed(0)}%
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Completion
-                </Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={4}>
-              <Paper 
-                elevation={0} 
-                sx={{ 
-                  p: 2, 
-                  textAlign: 'center',
-                  border: 1,
-                  borderColor: 'success.main',
-                  borderRadius: 2
-                }}
-              >
-                <Typography variant="h4" color="success.main" sx={{ fontWeight: 'bold' }}>
-                  {stats.streakData.currentStreak}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Streak
-                </Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={4}>
-              <Paper 
-                elevation={0} 
-                sx={{ 
-                  p: 2, 
-                  textAlign: 'center',
-                  border: 1,
-                  borderColor: 'error.main',
-                  borderRadius: 2
-                }}
-              >
-                <Typography variant="h4" color="error.main" sx={{ fontWeight: 'bold' }}>
-                  {stats.totalFine}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Fine (Rs)
-                </Typography>
-              </Paper>
-            </Grid>
-          </Grid>
-
-          {/* Prayer Records */}
-          <Box>
-            {sortedDates.map((date) => (
-              <Paper
-                key={date}
-                elevation={0}
-                sx={{
-                  p: 2,
-                  mb: 2,
-                  border: 1,
-                  borderColor: 'divider',
-                  borderRadius: 2,
-                }}
-              >
-                <Typography 
-                  variant="subtitle1" 
-                  sx={{ 
-                    fontWeight: 'medium',
-                    mb: 2,
-                    color: 'text.primary'
-                  }}
+          <Box sx={{ mb: 4 }}>
+            <Grid container spacing={2} alignItems="center">
+              <Grid item>
+                <ToggleButtonGroup
+                  value={dateRange}
+                  exclusive
+                  onChange={(_, value) => value && setDateRange(value)}
+                  size="small"
                 >
-                  {formatDate(date)}
-                </Typography>
-                <Grid container spacing={1}>
-                  {prayerHistory[date].prayers.map((prayer, index) => (
-                    <Grid item xs={6} key={index}>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1,
-                          p: 1,
-                          borderRadius: 1,
-                          bgcolor: prayer.completed ? 'success.lighter' : 'error.lighter',
-                        }}
-                      >
-                        {prayer.completed ? (
-                          <CheckCircleIcon fontSize="small" color="success" />
-                        ) : (
-                          <CancelIcon fontSize="small" color="error" />
-                        )}
-                        <Box>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              fontWeight: 'medium',
-                              color: prayer.completed ? 'success.dark' : 'error.dark',
-                            }}
-                          >
-                            {prayer.name}
-                          </Typography>
-                          {prayer.fine > 0 && (
-                            <Typography
-                              variant="caption"
-                              color="error"
-                            >
-                              Rs. {prayer.fine}
-                            </Typography>
-                          )}
-                        </Box>
-                      </Box>
-                    </Grid>
-                  ))}
+                  <ToggleButton value="daily">Daily</ToggleButton>
+                  <ToggleButton value="weekly">Weekly</ToggleButton>
+                  <ToggleButton value="monthly">Monthly</ToggleButton>
+                  <ToggleButton value="custom">Custom</ToggleButton>
+                </ToggleButtonGroup>
+              </Grid>
+              {dateRange === 'custom' && (
+                <Grid item xs={12} sm="auto">
+                  <Box display="flex" gap={2}>
+                    <input
+                      type="date"
+                      value={customRange.start}
+                      onChange={(e) =>
+                        setCustomRange((prev) => ({ ...prev, start: e.target.value }))
+                      }
+                    />
+                    <input
+                      type="date"
+                      value={customRange.end}
+                      onChange={(e) =>
+                        setCustomRange((prev) => ({ ...prev, end: e.target.value }))
+                      }
+                    />
+                  </Box>
                 </Grid>
-              </Paper>
-            ))}
+              )}
+            </Grid>
           </Box>
+
+          <Grid container spacing={3}>
+            {Object.entries(prayerHistory)
+              .filter(([date]) => {
+                if (date === 'fineHistory' || date === 'finePayments') return false;
+                const { start, end } = getDateRange();
+                const currentDate = new Date(date);
+                return currentDate >= start && currentDate <= end;
+              })
+              .sort(([dateA], [dateB]) => new Date(dateB).getTime() - new Date(dateA).getTime())
+              .map(([date, dayData]) => (
+                <Grid item xs={12} key={date}>
+                  <Card
+                    sx={{
+                      borderRadius: 3,
+                      background: `linear-gradient(135deg, ${alpha(
+                        theme.palette.primary.light,
+                        0.1
+                      )}, ${alpha(theme.palette.primary.main, 0.05)})`,
+                    }}
+                  >
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>
+                        {format(new Date(date), 'EEEE, MMMM d, yyyy')}
+                      </Typography>
+                      <Grid container spacing={2}>
+                        {dayData.prayers.map((prayer) => (
+                          <Grid item xs={12} sm={6} md={4} key={prayer.name}>
+                            <Card
+                              sx={{
+                                borderRadius: 2,
+                                bgcolor: prayer.completed
+                                  ? alpha(theme.palette.success.main, 0.1)
+                                  : alpha(theme.palette.error.main, 0.1),
+                              }}
+                            >
+                              <CardContent>
+                                <Box
+                                  display="flex"
+                                  justifyContent="space-between"
+                                  alignItems="center"
+                                >
+                                  <Box>
+                                    <Typography
+                                      variant="subtitle1"
+                                      color={
+                                        prayer.completed ? 'success.main' : 'error.main'
+                                      }
+                                      fontWeight="bold"
+                                    >
+                                      {prayer.name}
+                                    </Typography>
+                                    <Typography
+                                      variant="body2"
+                                      color="text.secondary"
+                                    >
+                                      {prayer.time}
+                                    </Typography>
+                                  </Box>
+                                  <Box display="flex" gap={1}>
+                                    <IconButton
+                                      size="small"
+                                      onClick={() =>
+                                        togglePrayerStatus(date, prayer.name)
+                                      }
+                                      sx={{
+                                        color: prayer.completed
+                                          ? 'success.main'
+                                          : 'error.main',
+                                      }}
+                                    >
+                                      {prayer.completed ? (
+                                        <CheckCircleIcon />
+                                      ) : (
+                                        <CancelIcon />
+                                      )}
+                                    </IconButton>
+                                  </Box>
+                                </Box>
+                              </CardContent>
+                            </Card>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+          </Grid>
         </Box>
       </DialogContent>
     </Dialog>

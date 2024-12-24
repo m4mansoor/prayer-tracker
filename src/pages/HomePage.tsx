@@ -22,15 +22,20 @@ import EditIcon from '@mui/icons-material/Edit';
 import HistoryIcon from '@mui/icons-material/History';
 import SentimentSatisfiedAltIcon from '@mui/icons-material/SentimentSatisfiedAlt';
 import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDissatisfied';
-import { Prayer, PrayerHistory } from '../types';
+import { v4 as uuidv4 } from 'uuid';
+import { Prayer, PrayerHistory, FinePayment } from '../types';
 import PrayerHistoryComponent from '../components/PrayerHistory';
 import PrayerReports from '../components/PrayerReports';
+import FineHistory from '../components/FineHistory';
 import { getTodaysPrayers, updatePrayerStatus } from '../utils/prayerUtils';
 
 const HomePage: React.FC = () => {
   const theme = useTheme();
   const [todaysPrayers, setTodaysPrayers] = useState<Prayer[]>([]);
-  const [prayerHistory, setPrayerHistory] = useState<PrayerHistory>({});
+  const [prayerHistory, setPrayerHistory] = useState<PrayerHistory>({
+    fineHistory: {},
+    finePayments: [],
+  });
   const [showHistory, setShowHistory] = useState(false);
   const [editingPrayer, setEditingPrayer] = useState<{ name: string; time: string } | null>(null);
 
@@ -38,6 +43,8 @@ const HomePage: React.FC = () => {
     const storedHistory = localStorage.getItem('prayerHistory');
     if (storedHistory) {
       setPrayerHistory(JSON.parse(storedHistory));
+    } else {
+      setPrayerHistory({ fineHistory: {}, finePayments: [] });
     }
     setTodaysPrayers(getTodaysPrayers());
   }, []);
@@ -83,6 +90,39 @@ const HomePage: React.FC = () => {
       }
       return total;
     }, 0);
+  };
+
+  const handlePayFine = (payment: Omit<FinePayment, 'id' | 'paidAt' | 'status'>) => {
+    const newPayment: FinePayment = {
+      ...payment,
+      id: uuidv4(),
+      paidAt: new Date().toISOString(),
+      status: 'paid',
+    };
+
+    const updatedHistory = {
+      ...prayerHistory,
+      finePayments: [...(prayerHistory.finePayments || []), newPayment],
+      fineHistory: {
+        ...prayerHistory.fineHistory,
+      },
+    };
+
+    // Mark fines as paid
+    Object.keys(updatedHistory.fineHistory).forEach((date) => {
+      const fineDate = new Date(date);
+      const startDate = new Date(payment.startDate);
+      const endDate = new Date(payment.endDate);
+
+      if (fineDate >= startDate && fineDate <= endDate) {
+        updatedHistory.fineHistory[date].paid = true;
+        updatedHistory.fineHistory[date].paidAt = newPayment.paidAt;
+        updatedHistory.fineHistory[date].paymentId = newPayment.id;
+      }
+    });
+
+    setPrayerHistory(updatedHistory);
+    localStorage.setItem('prayerHistory', JSON.stringify(updatedHistory));
   };
 
   return (
@@ -221,6 +261,28 @@ const HomePage: React.FC = () => {
           ))}
         </Grid>
 
+        {/* Prayer History Section */}
+        <Box sx={{ mb: 6 }}>
+          <Typography variant="h5" fontWeight="bold" color="primary" gutterBottom>
+            Prayer History
+          </Typography>
+          <PrayerHistoryComponent prayerHistory={prayerHistory} onClose={() => {}} />
+        </Box>
+
+        <Divider sx={{ my: 6 }} />
+
+        {/* Reports Section */}
+        <PrayerReports prayerHistory={prayerHistory} />
+
+        <Divider sx={{ my: 6 }} />
+
+        {/* Fine History Section */}
+        <FineHistory
+          fineHistory={prayerHistory.fineHistory}
+          finePayments={prayerHistory.finePayments || []}
+          onPayFine={handlePayFine}
+        />
+
         {/* Today's Fine Section */}
         <Box sx={{ mb: 6 }}>
           <Card
@@ -275,39 +337,36 @@ const HomePage: React.FC = () => {
 
         <Divider sx={{ my: 6 }} />
 
-        {/* Reports Section */}
-        <PrayerReports prayerHistory={prayerHistory} />
-      </Container>
-
-      {showHistory && (
-        <PrayerHistoryComponent
-          prayerHistory={prayerHistory}
-          onClose={() => setShowHistory(false)}
-        />
-      )}
-
-      <Dialog open={!!editingPrayer} onClose={() => setEditingPrayer(null)}>
-        <DialogTitle>Edit Prayer Time</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Time"
-            type="time"
-            fullWidth
-            variant="outlined"
-            value={editingPrayer?.time || ''}
-            onChange={(e) => setEditingPrayer(prev => prev ? { ...prev, time: e.target.value } : null)}
-            InputLabelProps={{
-              shrink: true,
-            }}
+        {showHistory && (
+          <PrayerHistoryComponent
+            prayerHistory={prayerHistory}
+            onClose={() => setShowHistory(false)}
           />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditingPrayer(null)}>Cancel</Button>
-          <Button onClick={handleTimeUpdate} variant="contained">Save</Button>
-        </DialogActions>
-      </Dialog>
+        )}
+
+        <Dialog open={!!editingPrayer} onClose={() => setEditingPrayer(null)}>
+          <DialogTitle>Edit Prayer Time</DialogTitle>
+          <DialogContent>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Time"
+              type="time"
+              fullWidth
+              variant="outlined"
+              value={editingPrayer?.time || ''}
+              onChange={(e) => setEditingPrayer(prev => prev ? { ...prev, time: e.target.value } : null)}
+              InputLabelProps={{
+                shrink: true,
+              }}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setEditingPrayer(null)}>Cancel</Button>
+            <Button onClick={handleTimeUpdate} variant="contained">Save</Button>
+          </DialogActions>
+        </Dialog>
+      </Container>
     </Box>
   );
 };

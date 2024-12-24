@@ -50,8 +50,31 @@ export interface DailyPrayers {
   totalFine: number;
 }
 
+export interface FinePayment {
+  id: string;
+  amount: number;
+  date: string;
+  paidAt: string;
+  startDate: string;
+  endDate: string;
+  paymentMethod: string;
+  status: 'pending' | 'paid';
+}
+
+export interface FineHistory {
+  [date: string]: {
+    amount: number;
+    prayers: string[];
+    paid: boolean;
+    paidAt?: string;
+    paymentId?: string;
+  };
+}
+
 export interface PrayerHistory {
   [date: string]: DailyPrayers;
+  fineHistory: FineHistory;
+  finePayments: FinePayment[];
 }
 
 export interface PrayerTimeSettings {
