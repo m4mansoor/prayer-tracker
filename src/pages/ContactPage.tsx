@@ -1,25 +1,41 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Container,
   Typography,
   Box,
   Card,
   CardContent,
-  IconButton,
+  TextField,
+  Button,
   useTheme,
   alpha,
+  Snackbar,
+  Alert,
 } from '@mui/material';
-import FacebookIcon from '@mui/icons-material/Facebook';
-import TwitterIcon from '@mui/icons-material/Twitter';
-import WhatsAppIcon from '@mui/icons-material/WhatsApp';
-import YouTubeIcon from '@mui/icons-material/YouTube';
-import EmailIcon from '@mui/icons-material/Email';
-import LanguageIcon from '@mui/icons-material/Language';
 import Footer from '../components/Footer';
 import Navigation from '../components/Navigation';
 
 const ContactPage: React.FC = () => {
   const theme = useTheme();
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: '',
+  });
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Here you would typically send the form data to your backend
+    console.log('Form submitted:', formData);
+    setShowSuccess(true);
+    setFormData({ name: '', email: '', message: '' });
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
   return (
     <Box>
@@ -29,12 +45,12 @@ const ContactPage: React.FC = () => {
           Contact Us
         </Typography>
         <Typography variant="h6" color="text.secondary" align="center" sx={{ mb: 6 }}>
-          Get in touch with the developer
+          Get in touch with us
         </Typography>
 
         <Card
           sx={{
-            maxWidth: 800,
+            maxWidth: 600,
             mx: 'auto',
             borderRadius: 4,
             background: `linear-gradient(135deg, ${alpha(
@@ -44,67 +60,66 @@ const ContactPage: React.FC = () => {
           }}
         >
           <CardContent sx={{ p: 4 }}>
-            <Typography variant="h5" gutterBottom>
-              Inaamul Haq Mansoor
-            </Typography>
-            <Typography variant="body1" color="text.secondary" paragraph>
-              Full Stack Developer & UI/UX Designer
-            </Typography>
-            <Typography variant="body1" paragraph>
-              Feel free to reach out through any of the following channels:
-            </Typography>
-            
-            <Box sx={{ mt: 3 }}>
-              <IconButton
-                href="https://facebook.com/developer"
-                target="_blank"
+            <form onSubmit={handleSubmit}>
+              <TextField
+                fullWidth
+                label="Name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                sx={{ mb: 3 }}
+              />
+              <TextField
+                fullWidth
+                label="Email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                sx={{ mb: 3 }}
+              />
+              <TextField
+                fullWidth
+                label="Message"
+                name="message"
+                multiline
+                rows={4}
+                value={formData.message}
+                onChange={handleChange}
+                required
+                sx={{ mb: 3 }}
+              />
+              <Button
+                type="submit"
+                variant="contained"
                 color="primary"
-                sx={{ mr: 2 }}
+                size="large"
+                fullWidth
               >
-                <FacebookIcon />
-              </IconButton>
-              <IconButton
-                href="https://twitter.com/developer"
-                target="_blank"
-                color="primary"
-                sx={{ mr: 2 }}
-              >
-                <TwitterIcon />
-              </IconButton>
-              <IconButton
-                href="https://youtube.com/developer"
-                target="_blank"
-                color="primary"
-                sx={{ mr: 2 }}
-              >
-                <YouTubeIcon />
-              </IconButton>
-              <IconButton
-                href="https://wa.me/developernumber"
-                target="_blank"
-                color="primary"
-                sx={{ mr: 2 }}
-              >
-                <WhatsAppIcon />
-              </IconButton>
-              <IconButton
-                href="mailto:developer@email.com"
-                color="primary"
-                sx={{ mr: 2 }}
-              >
-                <EmailIcon />
-              </IconButton>
-              <IconButton
-                href="https://developer-website.com"
-                target="_blank"
-                color="primary"
-              >
-                <LanguageIcon />
-              </IconButton>
-            </Box>
+                Send Message
+              </Button>
+            </form>
           </CardContent>
         </Card>
       </Container>
+
+      <Snackbar
+        open={showSuccess}
+        autoHideDuration={6000}
+        onClose={() => setShowSuccess(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setShowSuccess(false)}
+          severity="success"
+          variant="filled"
+        >
+          Message sent successfully!
+        </Alert>
+      </Snackbar>
+
       <Footer />
     </Box>
   );

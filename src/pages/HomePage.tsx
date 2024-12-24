@@ -30,9 +30,11 @@ import FineHistory from '../components/FineHistory';
 import { getTodaysPrayers, updatePrayerStatus } from '../utils/prayerUtils';
 import Navigation from '../components/Navigation';
 import Footer from '../components/Footer';
+import { useLocation } from 'react-router-dom';
 
 const HomePage: React.FC = () => {
   const theme = useTheme();
+  const location = useLocation();
   const [todaysPrayers, setTodaysPrayers] = useState<Prayer[]>([]);
   const [prayerHistory, setPrayerHistory] = useState<PrayerHistory>({
     fineHistory: {},
@@ -49,6 +51,15 @@ const HomePage: React.FC = () => {
       element.scrollIntoView({ behavior: 'smooth' });
     }
   };
+
+  useEffect(() => {
+    if (location.state?.scrollTo) {
+      const element = document.getElementById(location.state.scrollTo);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  }, [location]);
 
   useEffect(() => {
     const storedHistory = localStorage.getItem('prayerHistory');

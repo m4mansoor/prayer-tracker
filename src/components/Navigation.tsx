@@ -7,7 +7,7 @@ import {
   useTheme,
   alpha,
 } from '@mui/material';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 interface NavigationProps {
   onSectionClick: (section: string) => void;
@@ -15,6 +15,15 @@ interface NavigationProps {
 
 const Navigation: React.FC<NavigationProps> = ({ onSectionClick }) => {
   const theme = useTheme();
+  const navigate = useNavigate();
+
+  const handleSectionClick = (section: string) => {
+    if (window.location.pathname !== '/') {
+      navigate('/', { state: { scrollTo: section } });
+    } else {
+      onSectionClick(section);
+    }
+  };
 
   return (
     <AppBar 
@@ -28,25 +37,25 @@ const Navigation: React.FC<NavigationProps> = ({ onSectionClick }) => {
         <Box sx={{ flexGrow: 1, display: 'flex', gap: 2 }}>
           <Button 
             color="primary" 
-            onClick={() => onSectionClick('prayers')}
+            onClick={() => handleSectionClick('prayers')}
           >
             Prayers
           </Button>
           <Button 
             color="primary" 
-            onClick={() => onSectionClick('history')}
+            onClick={() => handleSectionClick('history')}
           >
             History
           </Button>
           <Button 
             color="primary" 
-            onClick={() => onSectionClick('fines')}
+            onClick={() => handleSectionClick('fines')}
           >
             Fines
           </Button>
           <Button 
             color="primary" 
-            onClick={() => onSectionClick('reports')}
+            onClick={() => handleSectionClick('reports')}
           >
             Reports
           </Button>
@@ -57,7 +66,7 @@ const Navigation: React.FC<NavigationProps> = ({ onSectionClick }) => {
             component={Link} 
             to="/about"
           >
-            About Us
+            About
           </Button>
           <Button 
             color="primary" 
