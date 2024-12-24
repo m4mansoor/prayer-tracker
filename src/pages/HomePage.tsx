@@ -5,16 +5,8 @@ import {
   Typography,
   Grid,
   Card,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
   useTheme,
 } from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
-import { useLocation } from 'react-router-dom';
 import PrayerHistory from '../components/PrayerHistory';
 import FineHistory from '../components/FineHistory';
 import Navigation from '../components/Navigation';
@@ -38,119 +30,44 @@ const defaultPrayers: Prayer[] = [
 
 const HomePage: React.FC = () => {
   const theme = useTheme();
-  const location = useLocation();
-  const [showPayFineDialog, setShowPayFineDialog] = useState(false);
-  const [fineAmount, setFineAmount] = useState(0);
-  const [selectedPayment, setSelectedPayment] = useState<any>(null);
-  const [editingPrayer, setEditingPrayer] = useState<{ name: string; time: string } | null>(null);
-  const [prayerHistory, setPrayerHistory] = useState<{
-    [key: string]: {
-      prayers: Prayer[];
-      finePayments?: Array<{
-        date: string;
-        amount: number;
-        startDate: string;
-        endDate: string;
-      }>;
-    };
-  }>({});
+  const [prayerHistory, setPrayerHistory] = useState<{[key: string]: Prayer[]}>({});
 
   useEffect(() => {
     const savedHistory = localStorage.getItem('prayerHistory');
     if (savedHistory) {
       setPrayerHistory(JSON.parse(savedHistory));
     } else {
-      // Initialize with today's prayers if no history exists
       const today = new Date().toISOString().split('T')[0];
-      setPrayerHistory({
-        [today]: {
-          prayers: defaultPrayers,
-          finePayments: []
-        }
-      });
+      setPrayerHistory({ [today]: defaultPrayers });
+      localStorage.setItem('prayerHistory', JSON.stringify({ [today]: defaultPrayers }));
     }
   }, []);
 
-  useEffect(() => {
-    if (location.state?.scrollTo) {
-      const element = document.getElementById(location.state.scrollTo);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
-  }, [location.state]);
-
   const today = new Date().toISOString().split('T')[0];
-  const todaysPrayers = prayerHistory[today]?.prayers || defaultPrayers;
+  const todaysPrayers = prayerHistory[today] || defaultPrayers;
 
-  const handlePrayerStatusChange = (index: number, completed: boolean, reason: string = '') => {
+  const handlePrayerStatusChange = (name: string, completed: boolean, reason?: string) => {
+    const updatedPrayers = todaysPrayers.map(prayer =>
+      prayer.name === name ? { ...prayer, completed, reason } : prayer
+    );
+
     setPrayerHistory(prev => {
-      const updated = { ...prev };
-      if (!updated[today]) {
-        updated[today] = {
-          prayers: [...defaultPrayers],
-          finePayments: []
-        };
-      }
-      
-      const updatedPrayers = [...updated[today].prayers];
-      updatedPrayers[index] = {
-        ...updatedPrayers[index],
-        completed,
-        reason: completed ? '' : reason
-      };
-      
-      updated[today].prayers = updatedPrayers;
+      const updated = { ...prev, [today]: updatedPrayers };
       localStorage.setItem('prayerHistory', JSON.stringify(updated));
       return updated;
     });
   };
 
-  const handlePrayerTimeUpdate = (index: number, startTime: string, endTime: string) => {
+  const handlePrayerTimeUpdate = (name: string, startTime: string, endTime: string) => {
+    const updatedPrayers = todaysPrayers.map(prayer =>
+      prayer.name === name ? { ...prayer, startTime, endTime } : prayer
+    );
+
     setPrayerHistory(prev => {
-      const updated = { ...prev };
-      if (!updated[today]) {
-        updated[today] = {
-          prayers: [...defaultPrayers],
-          finePayments: []
-        };
-      }
-      
-      const updatedPrayers = [...updated[today].prayers];
-      updatedPrayers[index] = {
-        ...updatedPrayers[index],
-        startTime,
-        endTime
-      };
-      
-      updated[today].prayers = updatedPrayers;
+      const updated = { ...prev, [today]: updatedPrayers };
       localStorage.setItem('prayerHistory', JSON.stringify(updated));
       return updated;
     });
-  };
-
-  const handlePayFine = () => {
-    if (!selectedPayment) return;
-
-    setPrayerHistory(prev => {
-      const updated = { ...prev };
-      if (!updated.finePayments) {
-        updated.finePayments = [];
-      }
-      
-      updated.finePayments.push({
-        date: today,
-        amount: selectedPayment.amount,
-        startDate: selectedPayment.startDate,
-        endDate: selectedPayment.endDate
-      });
-      
-      localStorage.setItem('prayerHistory', JSON.stringify(updated));
-      return updated;
-    });
-
-    setShowPayFineDialog(false);
-    setSelectedPayment(null);
   };
 
   return (
@@ -168,7 +85,7 @@ const HomePage: React.FC = () => {
             Today's Prayers
           </Typography>
           <Grid container spacing={3}>
-            {todaysPrayers.map((prayer, index) => (
+            {todaysPrayers.map((prayer) => (
               <Grid item xs={12} sm={6} md={4} key={prayer.name}>
                 <Card 
                   sx={{ 
@@ -181,34 +98,21 @@ const HomePage: React.FC = () => {
                       : theme.palette.text.primary
                   }}
                 >
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Box sx={{ mb: 2 }}>
                     <Typography variant="h6">{prayer.name}</Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          mr: 1,
-                          color: prayer.completed ? theme.palette.success.main : theme.palette.text.secondary
-                        }}
-                      >
-                        {prayer.startTime} - {prayer.endTime}
-                      </Typography>
-                      <IconButton 
-                        size="small" 
-                        onClick={() => setEditingPrayer({ name: prayer.name, time: prayer.startTime })}
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: prayer.completed ? theme.palette.success.main : theme.palette.text.secondary
+                      }}
+                    >
+                      {prayer.startTime} - {prayer.endTime}
+                    </Typography>
                   </Box>
                   <PrayerHistory
                     prayers={[prayer]}
-                    onPrayerUpdate={(_, completed, reason) => 
-                      handlePrayerStatusChange(index, completed, reason)
-                    }
-                    onTimeUpdate={(_, startTime, endTime) =>
-                      handlePrayerTimeUpdate(index, startTime, endTime)
-                    }
+                    onPrayerUpdate={handlePrayerStatusChange}
+                    onTimeUpdate={handlePrayerTimeUpdate}
                   />
                 </Card>
               </Grid>
@@ -221,31 +125,11 @@ const HomePage: React.FC = () => {
             Fine History
           </Typography>
           <FineHistory
-            fineHistory={prayerHistory}
-            finePayments={prayerHistory.finePayments || []}
-            onPayFine={(payment) => {
-              setSelectedPayment(payment);
-              setFineAmount(payment.amount);
-              setShowPayFineDialog(true);
-            }}
+            prayerHistory={prayerHistory}
+            onPayFine={() => {}}
           />
         </Box>
       </Container>
-
-      <Dialog open={showPayFineDialog} onClose={() => setShowPayFineDialog(false)}>
-        <DialogTitle>Pay Fine</DialogTitle>
-        <DialogContent>
-          <Typography variant="body1">
-            Are you sure you want to pay ₨{fineAmount}?
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowPayFineDialog(false)}>Cancel</Button>
-          <Button onClick={handlePayFine} variant="contained" color="primary">
-            Pay Now
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       <Footer />
     </Box>
