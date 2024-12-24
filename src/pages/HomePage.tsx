@@ -1,20 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import {
+  Box,
   Container,
   Typography,
-  Box,
-  Grid,
-  Card,
-  CardContent,
-  IconButton,
-  Button,
-  useTheme,
-  alpha,
-  TextField,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
+  Button,
+  useTheme,
+  alpha,
+} from '@mui/material';
+import {
+  Grid,
+  Card,
+  CardContent,
+  IconButton,
+  TextField,
   Divider,
 } from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
@@ -32,42 +34,43 @@ import Navigation from '../components/Navigation';
 import Footer from '../components/Footer';
 import { useLocation } from 'react-router-dom';
 
+interface Prayer {
+  name: string;
+  completed: boolean;
+  reason?: string;
+  startTime: string;
+  endTime: string;
+}
+
+const defaultPrayers: Prayer[] = [
+  { name: 'Fajr', completed: false, startTime: '04:30', endTime: '05:45' },
+  { name: 'Dhuhr', completed: false, startTime: '12:00', endTime: '15:00' },
+  { name: 'Asr', completed: false, startTime: '15:30', endTime: '17:00' },
+  { name: 'Maghrib', completed: false, startTime: '17:30', endTime: '19:00' },
+  { name: 'Isha', completed: false, startTime: '19:30', endTime: '23:59' },
+];
+
 const HomePage: React.FC = () => {
   const theme = useTheme();
   const location = useLocation();
-  const [todaysPrayers, setTodaysPrayers] = useState<Prayer[]>([]);
-  const [prayerHistory, setPrayerHistory] = useState<PrayerHistory>({
-    fineHistory: {},
-    finePayments: [],
-  });
-  const [showHistory, setShowHistory] = useState(false);
-  const [editingPrayer, setEditingPrayer] = useState<{ name: string; time: string } | null>(null);
+  const [prayerHistory, setPrayerHistory] = useState<Record<string, any>>({});
   const [showPayFineDialog, setShowPayFineDialog] = useState(false);
   const [fineAmount, setFineAmount] = useState(0);
-
-  const defaultPrayers = [
-    { name: 'Fajr', completed: false, startTime: '04:30', endTime: '05:45' },
-    { name: 'Dhuhr', completed: false, startTime: '12:00', endTime: '15:00' },
-    { name: 'Asr', completed: false, startTime: '15:30', endTime: '17:00' },
-    { name: 'Maghrib', completed: false, startTime: '17:30', endTime: '19:00' },
-    { name: 'Isha', completed: false, startTime: '19:30', endTime: '23:59' },
-  ];
-
-  const scrollToSection = (section: string) => {
-    const element = document.getElementById(section);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+  const [selectedPayment, setSelectedPayment] = useState<any>(null);
+  const [todaysPrayers, setTodaysPrayers] = useState<Prayer[]>([]);
+  const [editingPrayer, setEditingPrayer] = useState<{ name: string; time: string } | null>(null);
 
   useEffect(() => {
-    if (location.state?.scrollTo) {
-      const element = document.getElementById(location.state.scrollTo);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-      }
+    const savedHistory = localStorage.getItem('prayerHistory');
+    if (savedHistory) {
+      setPrayerHistory(JSON.parse(savedHistory));
     }
-  }, [location]);
+
+    // Handle scroll to section from navigation
+    if (location.state?.scrollTo) {
+      scrollToSection(location.state.scrollTo);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     const storedHistory = localStorage.getItem('prayerHistory');
@@ -79,11 +82,50 @@ const HomePage: React.FC = () => {
     setTodaysPrayers(getTodaysPrayers());
   }, []);
 
-  const handlePrayerToggle = (prayerName: string) => {
-    const { updatedHistory } = updatePrayerStatus(prayerHistory, prayerName);
+  const scrollToSection = (section: string) => {
+    const element = document.getElementById(section);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const today = new Date().toISOString().split('T')[0];
+  const todaysPrayersFromHistory = prayerHistory[today]?.prayers || defaultPrayers;
+
+  const handlePrayerStatusChange = (index: number, completed: boolean, reason: string = '') => {
+    const updatedHistory = { ...prayerHistory };
+    if (!updatedHistory[today]) {
+      updatedHistory[today] = {
+        prayers: defaultPrayers.map(p => ({ ...p })),
+      };
+    }
+
+    updatedHistory[today].prayers[index] = {
+      ...updatedHistory[today].prayers[index],
+      completed,
+      reason: completed ? '' : reason,
+    };
+
     setPrayerHistory(updatedHistory);
     localStorage.setItem('prayerHistory', JSON.stringify(updatedHistory));
-    setTodaysPrayers(getTodaysPrayers());
+  };
+
+  const handlePrayerTimeUpdate = (index: number, startTime: string, endTime: string) => {
+    const updatedHistory = { ...prayerHistory };
+    if (!updatedHistory[today]) {
+      updatedHistory[today] = {
+        prayers: defaultPrayers.map(p => ({ ...p })),
+      };
+    }
+
+    updatedHistory[today].prayers[index] = {
+      ...updatedHistory[today].prayers[index],
+      startTime,
+      endTime,
+    };
+
+    setPrayerHistory(updatedHistory);
+    localStorage.setItem('prayerHistory', JSON.stringify(updatedHistory));
   };
 
   const handleTimeEdit = (prayer: Prayer) => {
@@ -113,24 +155,25 @@ const HomePage: React.FC = () => {
     setEditingPrayer(null);
   };
 
-  const handlePrayerTimeUpdate = (index: number, startTime: string, endTime: string) => {
-    const date = new Date().toISOString().split('T')[0];
+  const handlePayFine = () => {
+    if (!selectedPayment) return;
+
     const updatedHistory = { ...prayerHistory };
-    
-    if (!updatedHistory[date]) {
-      updatedHistory[date] = {
-        prayers: defaultPrayers.map(p => ({ ...p })),
-      };
+    if (!updatedHistory.finePayments) {
+      updatedHistory.finePayments = [];
     }
 
-    updatedHistory[date].prayers[index] = {
-      ...updatedHistory[date].prayers[index],
-      startTime,
-      endTime,
-    };
+    updatedHistory.finePayments.push({
+      date: today,
+      amount: selectedPayment.amount,
+      startDate: selectedPayment.startDate,
+      endDate: selectedPayment.endDate,
+    });
 
+    setPrayerHistory(updatedHistory);
     localStorage.setItem('prayerHistory', JSON.stringify(updatedHistory));
-    window.location.reload();
+    setShowPayFineDialog(false);
+    setSelectedPayment(null);
   };
 
   const calculateTodaysFine = () => {
@@ -142,58 +185,17 @@ const HomePage: React.FC = () => {
     }, 0);
   };
 
-  const handlePayFine = (amount: number) => {
-    const date = new Date().toISOString().split('T')[0];
-    const updatedHistory = { ...prayerHistory };
-    
-    // Add payment to fine payments
-    if (!updatedHistory.finePayments) {
-      updatedHistory.finePayments = [];
-    }
-    updatedHistory.finePayments.push({
-      date,
-      amount,
-      startDate: date,
-      endDate: date
-    });
-
-    localStorage.setItem('prayerHistory', JSON.stringify(updatedHistory));
-    window.location.reload();
-  };
-
   return (
     <Box>
       <Navigation onSectionClick={scrollToSection} />
       
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Box id="prayers">
-          <Box sx={{ mb: 6, textAlign: 'center' }}>
-            <Typography 
-              variant="h3" 
-              component="h1" 
-              gutterBottom 
-              sx={{ 
-                fontWeight: 'bold',
-                background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
-              Qunoot Prayer Tracker
-            </Typography>
-            <Typography 
-              variant="subtitle1" 
-              sx={{ 
-                mb: 3,
-                color: 'text.secondary'
-              }}
-            >
-              Track your daily prayers
-            </Typography>
-          </Box>
-
+        <Box id="prayers" sx={{ mb: 6 }}>
+          <Typography variant="h4" gutterBottom>
+            Today's Prayers
+          </Typography>
           <Grid container spacing={3} sx={{ mb: 4 }}>
-            {todaysPrayers.map((prayer) => (
+            {todaysPrayersFromHistory.map((prayer, index) => (
               <Grid item xs={12} sm={6} md={4} key={prayer.name}>
                 <Card 
                   sx={{ 
@@ -266,7 +268,7 @@ const HomePage: React.FC = () => {
                           />
                         )}
                         <IconButton
-                          onClick={() => handlePrayerToggle(prayer.name)}
+                          onClick={() => handlePrayerStatusChange(index, !prayer.completed)}
                           sx={{
                             color: prayer.completed ? 'success.main' : 'action.disabled',
                             bgcolor: alpha(
@@ -337,7 +339,7 @@ const HomePage: React.FC = () => {
             <PrayerHistoryComponent
               prayerHistory={prayerHistory}
               onClose={() => {}}
-              onPrayerUpdate={handlePrayerToggle}
+              onPrayerUpdate={handlePrayerStatusChange}
               onTimeUpdate={handlePrayerTimeUpdate}
             />
           </Box>
@@ -349,7 +351,11 @@ const HomePage: React.FC = () => {
             <FineHistory
               fineHistory={prayerHistory.fineHistory}
               finePayments={prayerHistory.finePayments || []}
-              onPayFine={handlePayFine}
+              onPayFine={(payment) => {
+                setSelectedPayment(payment);
+                setFineAmount(payment.amount);
+                setShowPayFineDialog(true);
+              }}
             />
           </Box>
 
@@ -396,7 +402,7 @@ const HomePage: React.FC = () => {
             variant="contained"
             color="primary"
             onClick={() => {
-              handlePayFine(fineAmount);
+              handlePayFine();
               setShowPayFineDialog(false);
             }}
           >
