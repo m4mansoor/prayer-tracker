@@ -30,41 +30,29 @@ const defaultPrayers: Prayer[] = [
 
 const HomePage: React.FC = () => {
   const theme = useTheme();
-  const [prayerHistory, setPrayerHistory] = useState<{[key: string]: Prayer[]}>({});
   const today = new Date().toISOString().split('T')[0];
+  const [prayerHistory, setPrayerHistory] = useState<{[key: string]: Prayer[]}>({ [today]: defaultPrayers });
 
   useEffect(() => {
-    // Initialize today's prayers if they don't exist
-    setPrayerHistory(prev => {
-      if (!prev[today]) {
-        const newHistory = {
-          ...prev,
-          [today]: defaultPrayers
-        };
-        localStorage.setItem('prayerHistory', JSON.stringify(newHistory));
-        return newHistory;
-      }
-      return prev;
-    });
-  }, [today]);
-
-  useEffect(() => {
-    // Load saved history
     const savedHistory = localStorage.getItem('prayerHistory');
     if (savedHistory) {
       try {
         const parsed = JSON.parse(savedHistory);
-        setPrayerHistory(parsed);
+        setPrayerHistory(prev => ({
+          ...parsed,
+          [today]: parsed[today] || defaultPrayers
+        }));
       } catch (error) {
         console.error('Failed to parse prayer history:', error);
-        setPrayerHistory({ [today]: defaultPrayers });
       }
+    } else {
+      localStorage.setItem('prayerHistory', JSON.stringify({ [today]: defaultPrayers }));
     }
-  }, []);
+  }, [today]);
 
   const handlePrayerStatusChange = (name: string, completed: boolean, reason?: string) => {
     setPrayerHistory(prev => {
-      const updatedPrayers = (prev[today] || defaultPrayers).map(prayer =>
+      const updatedPrayers = prev[today].map(prayer =>
         prayer.name === name ? { ...prayer, completed, reason } : prayer
       );
 
@@ -80,7 +68,7 @@ const HomePage: React.FC = () => {
 
   const handlePrayerTimeUpdate = (name: string, startTime: string, endTime: string) => {
     setPrayerHistory(prev => {
-      const updatedPrayers = (prev[today] || defaultPrayers).map(prayer =>
+      const updatedPrayers = prev[today].map(prayer =>
         prayer.name === name ? { ...prayer, startTime, endTime } : prayer
       );
 
@@ -93,8 +81,6 @@ const HomePage: React.FC = () => {
       return newHistory;
     });
   };
-
-  const todaysPrayers = prayerHistory[today] || defaultPrayers;
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -111,7 +97,7 @@ const HomePage: React.FC = () => {
             Today's Prayers
           </Typography>
           <Grid container spacing={3}>
-            {todaysPrayers.map((prayer) => (
+            {prayerHistory[today].map((prayer) => (
               <Grid item xs={12} sm={6} md={4} key={prayer.name}>
                 <Card 
                   sx={{ 

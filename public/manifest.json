@@ -1,28 +1,19 @@
 {
-  "short_name": "Qunoot",
-  "name": "Qunoot Prayer Tracker",
+  "short_name": "Prayer Tracker",
+  "name": "Prayer Tracker App",
   "icons": [
     {
       "src": "favicon.ico",
       "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/x-icon"
-    },
-    {
-      "src": "logo192.png",
-      "type": "image/png",
-      "sizes": "192x192"
-    },
-    {
-      "src": "logo512.png",
-      "type": "image/png",
-      "sizes": "512x512"
     }
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff",
+  "theme_color": "#1F4B3F",
+  "background_color": "#F5F5F5",
   "orientation": "portrait",
   "scope": "/",
-  "description": "Track your daily prayers and maintain accountability"
+  "description": "Track your daily prayers and maintain accountability",
+  "mobile_web_app_capable": "yes"
 }

@@ -19,17 +19,25 @@ interface FineHistoryProps {
   onPayFine: (payment: any) => void;
 }
 
-const FineHistory: React.FC<FineHistoryProps> = ({ prayerHistory = {} }) => {
+const FineHistory: React.FC<FineHistoryProps> = ({ prayerHistory }) => {
+  if (!prayerHistory) {
+    return (
+      <Box>
+        <Typography variant="body1" color="text.secondary" align="center">
+          No fine history available
+        </Typography>
+      </Box>
+    );
+  }
+
   const calculateFine = (prayers: Prayer[] = []) => {
     return prayers.filter(p => !p.completed).length * 10; // 10 rupees per missed prayer
   };
 
-  const totalFine = Object.entries(prayerHistory || {}).reduce((total, [_, prayers]) => {
-    return total + calculateFine(prayers);
+  const dates = Object.keys(prayerHistory).sort((a, b) => b.localeCompare(a));
+  const totalFine = dates.reduce((total, date) => {
+    return total + calculateFine(prayerHistory[date]);
   }, 0);
-
-  const sortedDates = Object.entries(prayerHistory || {})
-    .sort(([a], [b]) => b.localeCompare(a));
 
   return (
     <Box>
@@ -44,7 +52,8 @@ const FineHistory: React.FC<FineHistoryProps> = ({ prayerHistory = {} }) => {
         </CardContent>
       </Card>
 
-      {sortedDates.map(([date, prayers]) => {
+      {dates.map(date => {
+        const prayers = prayerHistory[date];
         const dayFine = calculateFine(prayers);
         if (dayFine === 0) return null;
 
@@ -65,7 +74,7 @@ const FineHistory: React.FC<FineHistoryProps> = ({ prayerHistory = {} }) => {
         );
       })}
 
-      {sortedDates.length === 0 && (
+      {dates.length === 0 && (
         <Typography variant="body1" color="text.secondary" align="center">
           No fine history available
         </Typography>
