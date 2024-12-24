@@ -162,7 +162,7 @@ const HomePage: React.FC = () => {
           </Typography>
         </Box>
 
-        <Grid container spacing={3} sx={{ mb: 6 }}>
+        <Grid container spacing={3} sx={{ mb: 4 }}>
           {todaysPrayers.map((prayer) => (
             <Grid item xs={12} sm={6} md={4} key={prayer.name}>
               <Card 
@@ -261,13 +261,49 @@ const HomePage: React.FC = () => {
           ))}
         </Grid>
 
+        <Box sx={{ mb: 4 }}>
+          <Card
+            sx={{
+              borderRadius: 3,
+              background: `linear-gradient(135deg, ${alpha(theme.palette.warning.light, 0.1)}, ${alpha(
+                theme.palette.warning.main,
+                0.05
+              )})`,
+            }}
+          >
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Today's Fine
+              </Typography>
+              <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+              >
+                <Typography variant="h4" color="warning.main">
+                  ₨{calculateTodaysFine()}
+                </Typography>
+                {calculateTodaysFine() > 0 && (
+                  <Button
+                    variant="contained"
+                    color="warning"
+                    onClick={() => handlePayFine({ amount: calculateTodaysFine(), startDate: new Date().toISOString().split('T')[0], endDate: new Date().toISOString().split('T')[0] })}
+                  >
+                    Pay Now
+                  </Button>
+                )}
+              </Box>
+            </CardContent>
+          </Card>
+        </Box>
+
         <Box sx={{ mt: 4 }}>
           <Typography variant="h5" color="primary.main" gutterBottom>
             Prayer History
           </Typography>
           <PrayerHistoryComponent
             prayerHistory={prayerHistory}
-            onClose={() => {}} // Empty function since we don't need it anymore
+            onClose={() => {}}
           />
         </Box>
 
@@ -288,65 +324,6 @@ const HomePage: React.FC = () => {
           </Typography>
           <PrayerReports prayerHistory={prayerHistory} />
         </Box>
-
-        <Box sx={{ mt: 4 }}>
-          <Card
-            sx={{
-              borderRadius: 3,
-              background: `linear-gradient(135deg, ${alpha(theme.palette.warning.light, 0.1)}, ${alpha(
-                theme.palette.warning.main,
-                0.2
-              )})`,
-            }}
-          >
-            <CardContent sx={{ p: 3 }}>
-              <Grid container alignItems="center" spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="h6" color="warning.main" fontWeight="bold">
-                    Today's Fine
-                  </Typography>
-                  <Typography color="text.secondary">
-                    Rs. 10 fine for each missed prayer
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} md={6} sx={{ textAlign: 'right' }}>
-                  <Typography variant="h4" color="warning.main" fontWeight="bold">
-                    Rs. {calculateTodaysFine()}
-                  </Typography>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-        </Box>
-
-        <Box sx={{ mb: 6, textAlign: 'center' }}>
-          <Button
-            variant="contained"
-            startIcon={<HistoryIcon />}
-            onClick={() => setShowHistory(true)}
-            sx={{ 
-              borderRadius: 2,
-              textTransform: 'none',
-              px: 4,
-              py: 1,
-              background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-              '&:hover': {
-                background: `linear-gradient(135deg, ${theme.palette.primary.dark}, ${theme.palette.secondary.dark})`,
-              },
-            }}
-          >
-            View Prayer History
-          </Button>
-        </Box>
-
-        <Divider sx={{ my: 6 }} />
-
-        {showHistory && (
-          <PrayerHistoryComponent
-            prayerHistory={prayerHistory}
-            onClose={() => setShowHistory(false)}
-          />
-        )}
 
         <Dialog open={!!editingPrayer} onClose={() => setEditingPrayer(null)}>
           <DialogTitle>Edit Prayer Time</DialogTitle>

@@ -11,9 +11,15 @@ import {
   ToggleButtonGroup,
   ToggleButton,
   Button,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+import EditIcon from '@mui/icons-material/Edit';
 import { Prayer, PrayerHistory } from '../types';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 
@@ -24,6 +30,13 @@ interface PrayerHistoryProps {
 
 type DateRange = 'daily' | 'weekly' | 'monthly' | 'custom';
 
+interface EditDialogState {
+  open: boolean;
+  date: string;
+  prayer: Prayer | null;
+  reason: string;
+}
+
 const PrayerHistoryComponent: React.FC<PrayerHistoryProps> = ({
   prayerHistory,
   onClose,
@@ -31,8 +44,14 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryProps> = ({
   const theme = useTheme();
   const [dateRange, setDateRange] = useState<DateRange>('daily');
   const [customRange, setCustomRange] = useState<{ start: string; end: string }>({
-    start: '',
-    end: '',
+    start: format(new Date(), 'yyyy-MM-dd'),
+    end: format(new Date(), 'yyyy-MM-dd'),
+  });
+  const [editDialog, setEditDialog] = useState<EditDialogState>({
+    open: false,
+    date: '',
+    prayer: null,
+    reason: '',
   });
 
   const getDateRange = () => {
@@ -42,6 +61,8 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryProps> = ({
 
     switch (dateRange) {
       case 'daily':
+        start = new Date(format(now, 'yyyy-MM-dd'));
+        end = new Date(format(now, 'yyyy-MM-dd'));
         break;
       case 'weekly':
         start = startOfWeek(now);
@@ -62,11 +83,15 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryProps> = ({
     return { start, end };
   };
 
-  const togglePrayerStatus = (date: string, prayerName: string) => {
+  const togglePrayerStatus = (date: string, prayerName: string, reason?: string) => {
     const prayers = prayerHistory[date]?.prayers || [];
     const updatedPrayers = prayers.map((prayer) =>
       prayer.name === prayerName
-        ? { ...prayer, completed: !prayer.completed }
+        ? { 
+            ...prayer, 
+            completed: !prayer.completed,
+            reason: reason || prayer.reason
+          }
         : prayer
     );
 
@@ -79,7 +104,18 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryProps> = ({
     };
 
     localStorage.setItem('prayerHistory', JSON.stringify(updatedHistory));
-    window.location.reload(); // Refresh to update all components
+    window.location.reload();
+  };
+
+  const handleEditDialogClose = () => {
+    setEditDialog({ open: false, date: '', prayer: null, reason: '' });
+  };
+
+  const handleEditDialogSave = () => {
+    if (editDialog.date && editDialog.prayer) {
+      togglePrayerStatus(editDialog.date, editDialog.prayer.name, editDialog.reason);
+    }
+    handleEditDialogClose();
   };
 
   return (
@@ -108,6 +144,11 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryProps> = ({
                   onChange={(e) =>
                     setCustomRange((prev) => ({ ...prev, start: e.target.value }))
                   }
+                  style={{
+                    padding: '8px',
+                    borderRadius: '4px',
+                    border: '1px solid #ccc',
+                  }}
                 />
                 <input
                   type="date"
@@ -115,6 +156,11 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryProps> = ({
                   onChange={(e) =>
                     setCustomRange((prev) => ({ ...prev, end: e.target.value }))
                   }
+                  style={{
+                    padding: '8px',
+                    borderRadius: '4px',
+                    border: '1px solid #ccc',
+                  }}
                 />
               </Box>
             </Grid>
@@ -179,13 +225,33 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryProps> = ({
                                 >
                                   {prayer.time}
                                 </Typography>
+                                {prayer.reason && (
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{ display: 'block', mt: 0.5 }}
+                                  >
+                                    Reason: {prayer.reason}
+                                  </Typography>
+                                )}
                               </Box>
                               <Box display="flex" gap={1}>
                                 <IconButton
                                   size="small"
                                   onClick={() =>
-                                    togglePrayerStatus(date, prayer.name)
+                                    setEditDialog({
+                                      open: true,
+                                      date,
+                                      prayer,
+                                      reason: prayer.reason || '',
+                                    })
                                   }
+                                >
+                                  <EditIcon />
+                                </IconButton>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => togglePrayerStatus(date, prayer.name)}
                                   sx={{
                                     color: prayer.completed
                                       ? 'success.main'
@@ -210,6 +276,31 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryProps> = ({
             </Grid>
           ))}
       </Grid>
+
+      <Dialog open={editDialog.open} onClose={handleEditDialogClose}>
+        <DialogTitle>Edit Prayer Status</DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 2 }}>
+            <TextField
+              label="Reason"
+              fullWidth
+              multiline
+              rows={3}
+              value={editDialog.reason}
+              onChange={(e) =>
+                setEditDialog((prev) => ({ ...prev, reason: e.target.value }))
+              }
+              placeholder="Enter reason for prayer status (optional)"
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleEditDialogClose}>Cancel</Button>
+          <Button onClick={handleEditDialogSave} variant="contained">
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
