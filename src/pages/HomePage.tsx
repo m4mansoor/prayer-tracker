@@ -103,37 +103,32 @@ const HomePage: React.FC = () => {
     }, 0);
   };
 
-  const handlePayFine = (payment: Omit<FinePayment, 'id' | 'paidAt' | 'status'>) => {
-    const newPayment: FinePayment = {
-      ...payment,
-      id: uuidv4(),
-      paidAt: new Date().toISOString(),
-      status: 'paid',
-    };
-
-    const updatedHistory = {
-      ...prayerHistory,
-      finePayments: [...(prayerHistory.finePayments || []), newPayment],
-      fineHistory: {
-        ...prayerHistory.fineHistory,
-      },
-    };
-
-    // Mark fines as paid
-    Object.keys(updatedHistory.fineHistory).forEach((date) => {
-      const fineDate = new Date(date);
-      const startDate = new Date(payment.startDate);
-      const endDate = new Date(payment.endDate);
-
-      if (fineDate >= startDate && fineDate <= endDate) {
-        updatedHistory.fineHistory[date].paid = true;
-        updatedHistory.fineHistory[date].paidAt = newPayment.paidAt;
-        updatedHistory.fineHistory[date].paymentId = newPayment.id;
-      }
+  const handlePayFine = (amount: number) => {
+    const date = new Date().toISOString().split('T')[0];
+    const updatedHistory = { ...prayerHistory };
+    
+    // Add payment to fine payments
+    if (!updatedHistory.finePayments) {
+      updatedHistory.finePayments = [];
+    }
+    updatedHistory.finePayments.push({
+      date,
+      amount,
+      startDate: date,
+      endDate: date
     });
 
-    setPrayerHistory(updatedHistory);
+    // Clear today's prayers
+    if (updatedHistory[date]) {
+      updatedHistory[date].prayers = updatedHistory[date].prayers.map(prayer => ({
+        ...prayer,
+        completed: true,
+        reason: 'Fine paid'
+      }));
+    }
+
     localStorage.setItem('prayerHistory', JSON.stringify(updatedHistory));
+    window.location.reload();
   };
 
   return (
@@ -369,7 +364,7 @@ const HomePage: React.FC = () => {
             variant="contained"
             color="primary"
             onClick={() => {
-              handlePayFine({ amount: fineAmount, startDate: new Date().toISOString().split('T')[0], endDate: new Date().toISOString().split('T')[0] });
+              handlePayFine(fineAmount);
               setShowPayFineDialog(false);
             }}
           >
