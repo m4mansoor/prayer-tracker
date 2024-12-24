@@ -18,15 +18,14 @@ import {
   DialogActions,
   FormControl,
   FormLabel,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
+  Switch,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import EditIcon from '@mui/icons-material/Edit';
 import { Prayer, PrayerHistory } from '../types';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import PrayerCard from './PrayerCard';
 
 interface PrayerHistoryProps {
   prayerHistory: PrayerHistory;
@@ -57,6 +56,8 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryProps> = ({
     name: string;
     completed: boolean;
     reason: string;
+    startTime: string;
+    endTime: string;
   } | null>(null);
 
   const getDateRange = () => {
@@ -112,14 +113,16 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryProps> = ({
     window.location.reload();
   };
 
-  const handlePrayerEdit = (date: string, name: string, completed: boolean, reason: string) => {
+  const handlePrayerEdit = (date: string, name: string, completed: boolean, reason: string, startTime: string, endTime: string) => {
     const prayers = prayerHistory[date]?.prayers || [];
     const updatedPrayers = prayers.map((prayer) =>
       prayer.name === name
         ? { 
             ...prayer, 
             completed,
-            reason
+            reason,
+            startTime,
+            endTime
           }
         : prayer
     );
@@ -213,79 +216,18 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryProps> = ({
                   <Grid container spacing={2}>
                     {dayData.prayers.map((prayer) => (
                       <Grid item xs={12} sm={6} md={4} key={prayer.name}>
-                        <Card
-                          sx={{
-                            borderRadius: 2,
-                            bgcolor: prayer.completed
-                              ? alpha(theme.palette.success.main, 0.1)
-                              : alpha(theme.palette.error.main, 0.1),
+                        <PrayerCard
+                          name={prayer.name}
+                          completed={prayer.completed}
+                          startTime={prayer.startTime}
+                          endTime={prayer.endTime}
+                          onStatusChange={(completed, reason) => 
+                            togglePrayerStatus(date, prayer.name, reason)
+                          }
+                          onTimeChange={(startTime, endTime) => {
+                            handlePrayerEdit(date, prayer.name, prayer.completed, prayer.reason, startTime, endTime);
                           }}
-                        >
-                          <CardContent>
-                            <Box
-                              display="flex"
-                              justifyContent="space-between"
-                              alignItems="center"
-                            >
-                              <Box>
-                                <Typography
-                                  variant="subtitle1"
-                                  color={
-                                    prayer.completed ? 'success.main' : 'error.main'
-                                  }
-                                  fontWeight="bold"
-                                >
-                                  {prayer.name}
-                                </Typography>
-                                <Typography
-                                  variant="body2"
-                                  color="text.secondary"
-                                >
-                                  {prayer.time}
-                                </Typography>
-                                {prayer.reason && (
-                                  <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                    sx={{ display: 'block', mt: 0.5 }}
-                                  >
-                                    Reason: {prayer.reason}
-                                  </Typography>
-                                )}
-                              </Box>
-                              <Box display="flex" gap={1}>
-                                <IconButton
-                                  size="small"
-                                  onClick={() =>
-                                    setEditingPrayer({
-                                      date,
-                                      name: prayer.name,
-                                      completed: prayer.completed,
-                                      reason: prayer.reason || '',
-                                    })
-                                  }
-                                >
-                                  <EditIcon />
-                                </IconButton>
-                                <IconButton
-                                  size="small"
-                                  onClick={() => togglePrayerStatus(date, prayer.name)}
-                                  sx={{
-                                    color: prayer.completed
-                                      ? 'success.main'
-                                      : 'error.main',
-                                  }}
-                                >
-                                  {prayer.completed ? (
-                                    <CheckCircleIcon />
-                                  ) : (
-                                    <CancelIcon />
-                                  )}
-                                </IconButton>
-                              </Box>
-                            </Box>
-                          </CardContent>
-                        </Card>
+                        />
                       </Grid>
                     ))}
                   </Grid>
@@ -312,26 +254,21 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryProps> = ({
         </DialogTitle>
         <DialogContent>
           <Box sx={{ py: 2 }}>
-            <FormControl component="fieldset">
-              <FormLabel component="legend">Prayer Status</FormLabel>
-              <RadioGroup
-                value={editingPrayer?.completed ? 'completed' : 'missed'}
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between',
+              mb: 3 
+            }}>
+              <Typography>Prayer Status</Typography>
+              <Switch
+                checked={editingPrayer?.completed || false}
                 onChange={(e) => setEditingPrayer(prev => 
-                  prev ? { ...prev, completed: e.target.value === 'completed' } : null
+                  prev ? { ...prev, completed: e.target.checked } : null
                 )}
-              >
-                <FormControlLabel 
-                  value="completed" 
-                  control={<Radio color="success" />} 
-                  label="Completed" 
-                />
-                <FormControlLabel 
-                  value="missed" 
-                  control={<Radio color="error" />} 
-                  label="Missed" 
-                />
-              </RadioGroup>
-            </FormControl>
+                color="success"
+              />
+            </Box>
             
             <TextField
               margin="dense"
@@ -343,7 +280,28 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryProps> = ({
               onChange={(e) => setEditingPrayer(prev => 
                 prev ? { ...prev, reason: e.target.value } : null
               )}
-              sx={{ mt: 2 }}
+            />
+            
+            <TextField
+              margin="dense"
+              label="Start Time"
+              fullWidth
+              type="time"
+              value={editingPrayer?.startTime || ''}
+              onChange={(e) => setEditingPrayer(prev => 
+                prev ? { ...prev, startTime: e.target.value } : null
+              )}
+            />
+            
+            <TextField
+              margin="dense"
+              label="End Time"
+              fullWidth
+              type="time"
+              value={editingPrayer?.endTime || ''}
+              onChange={(e) => setEditingPrayer(prev => 
+                prev ? { ...prev, endTime: e.target.value } : null
+              )}
             />
           </Box>
         </DialogContent>
@@ -360,7 +318,9 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryProps> = ({
                   editingPrayer.date,
                   editingPrayer.name,
                   editingPrayer.completed,
-                  editingPrayer.reason
+                  editingPrayer.reason,
+                  editingPrayer.startTime,
+                  editingPrayer.endTime
                 );
                 setEditingPrayer(null);
               }

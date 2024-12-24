@@ -45,6 +45,14 @@ const HomePage: React.FC = () => {
   const [showPayFineDialog, setShowPayFineDialog] = useState(false);
   const [fineAmount, setFineAmount] = useState(0);
 
+  const defaultPrayers = [
+    { name: 'Fajr', completed: false, startTime: '04:30', endTime: '05:45' },
+    { name: 'Dhuhr', completed: false, startTime: '12:00', endTime: '15:00' },
+    { name: 'Asr', completed: false, startTime: '15:30', endTime: '17:00' },
+    { name: 'Maghrib', completed: false, startTime: '17:30', endTime: '19:00' },
+    { name: 'Isha', completed: false, startTime: '19:30', endTime: '23:59' },
+  ];
+
   const scrollToSection = (section: string) => {
     const element = document.getElementById(section);
     if (element) {
@@ -105,6 +113,26 @@ const HomePage: React.FC = () => {
     setEditingPrayer(null);
   };
 
+  const handlePrayerTimeUpdate = (index: number, startTime: string, endTime: string) => {
+    const date = new Date().toISOString().split('T')[0];
+    const updatedHistory = { ...prayerHistory };
+    
+    if (!updatedHistory[date]) {
+      updatedHistory[date] = {
+        prayers: defaultPrayers.map(p => ({ ...p })),
+      };
+    }
+
+    updatedHistory[date].prayers[index] = {
+      ...updatedHistory[date].prayers[index],
+      startTime,
+      endTime,
+    };
+
+    localStorage.setItem('prayerHistory', JSON.stringify(updatedHistory));
+    window.location.reload();
+  };
+
   const calculateTodaysFine = () => {
     return todaysPrayers.reduce((total, prayer) => {
       if (!prayer.completed) {
@@ -128,15 +156,6 @@ const HomePage: React.FC = () => {
       startDate: date,
       endDate: date
     });
-
-    // Clear today's prayers
-    if (updatedHistory[date]) {
-      updatedHistory[date].prayers = updatedHistory[date].prayers.map(prayer => ({
-        ...prayer,
-        completed: true,
-        reason: 'Fine paid'
-      }));
-    }
 
     localStorage.setItem('prayerHistory', JSON.stringify(updatedHistory));
     window.location.reload();
@@ -318,6 +337,8 @@ const HomePage: React.FC = () => {
             <PrayerHistoryComponent
               prayerHistory={prayerHistory}
               onClose={() => {}}
+              onPrayerUpdate={handlePrayerToggle}
+              onTimeUpdate={handlePrayerTimeUpdate}
             />
           </Box>
 

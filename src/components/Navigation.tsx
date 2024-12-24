@@ -6,8 +6,10 @@ import {
   Box,
   useTheme,
   alpha,
+  IconButton,
 } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
+import HomeIcon from '@mui/icons-material/Home';
 
 interface NavigationProps {
   onSectionClick: (section: string) => void;
@@ -34,6 +36,14 @@ const Navigation: React.FC<NavigationProps> = ({ onSectionClick }) => {
       }}
     >
       <Toolbar>
+        <IconButton
+          color="primary"
+          component={Link}
+          to="/"
+          sx={{ mr: 2 }}
+        >
+          <HomeIcon />
+        </IconButton>
         <Box sx={{ flexGrow: 1, display: 'flex', gap: 2 }}>
           <Button 
             color="primary" 
