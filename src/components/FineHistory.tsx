@@ -19,14 +19,17 @@ interface FineHistoryProps {
   onPayFine: (payment: any) => void;
 }
 
-const FineHistory: React.FC<FineHistoryProps> = ({ prayerHistory }) => {
-  const calculateFine = (prayers: Prayer[]) => {
+const FineHistory: React.FC<FineHistoryProps> = ({ prayerHistory = {} }) => {
+  const calculateFine = (prayers: Prayer[] = []) => {
     return prayers.filter(p => !p.completed).length * 10; // 10 rupees per missed prayer
   };
 
-  const totalFine = Object.entries(prayerHistory).reduce((total, [_, prayers]) => {
+  const totalFine = Object.entries(prayerHistory || {}).reduce((total, [_, prayers]) => {
     return total + calculateFine(prayers);
   }, 0);
+
+  const sortedDates = Object.entries(prayerHistory || {})
+    .sort(([a], [b]) => b.localeCompare(a));
 
   return (
     <Box>
@@ -41,28 +44,32 @@ const FineHistory: React.FC<FineHistoryProps> = ({ prayerHistory }) => {
         </CardContent>
       </Card>
 
-      {Object.entries(prayerHistory)
-        .sort(([a], [b]) => b.localeCompare(a))
-        .map(([date, prayers]) => {
-          const dayFine = calculateFine(prayers);
-          if (dayFine === 0) return null;
+      {sortedDates.map(([date, prayers]) => {
+        const dayFine = calculateFine(prayers);
+        if (dayFine === 0) return null;
 
-          return (
-            <Card key={date} sx={{ mb: 2 }}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  {new Date(date).toLocaleDateString()}
-                </Typography>
-                <Typography variant="body1" color="error" gutterBottom>
-                  Fine: ₨{dayFine}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Missed Prayers: {prayers.filter(p => !p.completed).map(p => p.name).join(', ')}
-                </Typography>
-              </CardContent>
-            </Card>
-          );
-        })}
+        return (
+          <Card key={date} sx={{ mb: 2 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                {new Date(date).toLocaleDateString()}
+              </Typography>
+              <Typography variant="body1" color="error" gutterBottom>
+                Fine: ₨{dayFine}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Missed Prayers: {prayers.filter(p => !p.completed).map(p => p.name).join(', ')}
+              </Typography>
+            </CardContent>
+          </Card>
+        );
+      })}
+
+      {sortedDates.length === 0 && (
+        <Typography variant="body1" color="text.secondary" align="center">
+          No fine history available
+        </Typography>
+      )}
     </Box>
   );
 };
