@@ -2,36 +2,25 @@ import React, { useState } from 'react';
 import {
   Box,
   Typography,
+  Grid,
   Card,
   CardContent,
-  Grid,
   useTheme,
   alpha,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  MenuItem,
   ToggleButtonGroup,
   ToggleButton,
+  Button,
 } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import PaymentIcon from '@mui/icons-material/Payment';
-import DateRangeIcon from '@mui/icons-material/DateRange';
-import { FineHistory, FinePayment } from '../types';
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { format } from 'date-fns';
+import { FinePayment } from '../types';
 
 interface FineHistoryProps {
-  fineHistory: FineHistory;
+  fineHistory: Record<string, number>;
   finePayments: FinePayment[];
-  onPayFine: (payment: Omit<FinePayment, 'id' | 'paidAt' | 'status'>) => void;
+  onPayFine: (amount: number) => void;
 }
 
-type DateRange = 'daily' | 'weekly' | 'monthly' | 'custom';
+type DateRange = 'daily' | 'weekly' | 'monthly';
 
 const FineHistory: React.FC<FineHistoryProps> = ({
   fineHistory,
@@ -40,80 +29,14 @@ const FineHistory: React.FC<FineHistoryProps> = ({
 }) => {
   const theme = useTheme();
   const [dateRange, setDateRange] = useState<DateRange>('daily');
-  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [customRange, setCustomRange] = useState<{
-    start: Date | null;
-    end: Date | null;
-  }>({
-    start: null,
-    end: null,
-  });
-  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [paymentAmount, setPaymentAmount] = useState<number>(0);
 
-  const getDateRange = () => {
-    const now = new Date();
-    let start = now;
-    let end = now;
-
-    switch (dateRange) {
-      case 'daily':
-        break;
-      case 'weekly':
-        start = startOfWeek(now);
-        end = endOfWeek(now);
-        break;
-      case 'monthly':
-        start = startOfMonth(now);
-        end = endOfMonth(now);
-        break;
-      case 'custom':
-        if (customRange.start && customRange.end) {
-          start = customRange.start;
-          end = customRange.end;
-        }
-        break;
-    }
-
-    return { start, end };
-  };
-
-  const calculateTotalFine = () => {
-    const { start, end } = getDateRange();
-    let total = 0;
-
-    Object.entries(fineHistory).forEach(([date, data]) => {
-      const currentDate = new Date(date);
-      if (currentDate >= start && currentDate <= end && !data.paid) {
-        total += data.amount;
-      }
-    });
-
-    return total;
-  };
-
-  const handlePayment = () => {
-    const { start, end } = getDateRange();
-    const totalAmount = calculateTotalFine();
-
-    if (totalAmount > 0) {
-      onPayFine({
-        amount: totalAmount,
-        date: new Date().toISOString(),
-        startDate: start.toISOString(),
-        endDate: end.toISOString(),
-        paymentMethod,
-      });
-    }
-
-    setShowPaymentDialog(false);
-  };
+  const totalFine = Object.values(fineHistory).reduce((sum, fine) => sum + fine, 0);
+  const totalPaid = finePayments.reduce((sum, payment) => sum + payment.amount, 0);
+  const remainingFine = totalFine - totalPaid;
 
   return (
-    <Box sx={{ mt: 6 }}>
-      <Typography variant="h5" fontWeight="bold" color="primary" gutterBottom>
-        Fine History
-      </Typography>
-
+    <Box>
       <Box sx={{ mb: 4 }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item>
@@ -126,88 +49,29 @@ const FineHistory: React.FC<FineHistoryProps> = ({
               <ToggleButton value="daily">Daily</ToggleButton>
               <ToggleButton value="weekly">Weekly</ToggleButton>
               <ToggleButton value="monthly">Monthly</ToggleButton>
-              <ToggleButton value="custom">Custom</ToggleButton>
             </ToggleButtonGroup>
           </Grid>
-          {dateRange === 'custom' && (
-            <Grid item xs={12} sm="auto">
-              <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <Box display="flex" gap={2}>
-                  <DatePicker
-                    label="Start Date"
-                    value={customRange.start}
-                    onChange={(date) =>
-                      setCustomRange((prev) => ({ ...prev, start: date }))
-                    }
-                  />
-                  <DatePicker
-                    label="End Date"
-                    value={customRange.end}
-                    onChange={(date) =>
-                      setCustomRange((prev) => ({ ...prev, end: date }))
-                    }
-                  />
-                </Box>
-              </LocalizationProvider>
-            </Grid>
-          )}
         </Grid>
       </Box>
 
       <Grid container spacing={3}>
-        <Grid item xs={12} md={8}>
+        <Grid item xs={12} md={4}>
           <Card
             sx={{
               borderRadius: 3,
               background: `linear-gradient(135deg, ${alpha(
-                theme.palette.warning.light,
+                theme.palette.primary.light,
                 0.1
-              )}, ${alpha(theme.palette.warning.main, 0.2)})`,
+              )}, ${alpha(theme.palette.primary.main, 0.05)})`,
             }}
           >
             <CardContent>
-              <Typography variant="h6" color="warning.main" gutterBottom>
-                Unpaid Fines
+              <Typography variant="h6" gutterBottom>
+                Total Fine
               </Typography>
-              {Object.entries(fineHistory)
-                .filter(([date]) => {
-                  const { start, end } = getDateRange();
-                  const currentDate = new Date(date);
-                  return currentDate >= start && currentDate <= end;
-                })
-                .map(([date, data]) => (
-                  <Box
-                    key={date}
-                    sx={{
-                      py: 2,
-                      borderBottom: 1,
-                      borderColor: 'divider',
-                      '&:last-child': { borderBottom: 0 },
-                    }}
-                  >
-                    <Grid container alignItems="center" spacing={2}>
-                      <Grid item xs={12} sm={4}>
-                        <Typography variant="subtitle1">
-                          {format(new Date(date), 'MMM dd, yyyy')}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
-                        <Typography color="text.secondary">
-                          {data.prayers.join(', ')}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12} sm={4} sx={{ textAlign: 'right' }}>
-                        <Typography
-                          variant="subtitle1"
-                          color={data.paid ? 'success.main' : 'warning.main'}
-                          fontWeight="bold"
-                        >
-                          Rs. {data.amount}
-                        </Typography>
-                      </Grid>
-                    </Grid>
-                  </Box>
-                ))}
+              <Typography variant="h4" color="primary.main">
+                ₹{totalFine}
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -216,127 +80,121 @@ const FineHistory: React.FC<FineHistoryProps> = ({
           <Card
             sx={{
               borderRadius: 3,
-              background: theme.palette.background.paper,
-              height: '100%',
+              background: `linear-gradient(135deg, ${alpha(
+                theme.palette.success.light,
+                0.1
+              )}, ${alpha(theme.palette.success.main, 0.05)})`,
             }}
           >
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Total Fine
+                Total Paid
               </Typography>
-              <Typography variant="h3" color="warning.main" gutterBottom>
-                Rs. {calculateTotalFine()}
+              <Typography variant="h4" color="success.main">
+                ₹{totalPaid}
               </Typography>
-              <Button
-                variant="contained"
-                startIcon={<PaymentIcon />}
-                fullWidth
-                onClick={() => setShowPaymentDialog(true)}
-                disabled={calculateTotalFine() === 0}
-                sx={{
-                  mt: 2,
-                  background: `linear-gradient(135deg, ${theme.palette.warning.main}, ${theme.palette.warning.dark})`,
-                  '&:hover': {
-                    background: `linear-gradient(135deg, ${theme.palette.warning.dark}, ${theme.palette.warning.main})`,
-                  },
-                }}
-              >
-                Pay Fine
-              </Button>
             </CardContent>
           </Card>
         </Grid>
 
-        {/* Payment History */}
-        <Grid item xs={12}>
-          <Card sx={{ borderRadius: 3 }}>
+        <Grid item xs={12} md={4}>
+          <Card
+            sx={{
+              borderRadius: 3,
+              background: `linear-gradient(135deg, ${alpha(
+                theme.palette.error.light,
+                0.1
+              )}, ${alpha(theme.palette.error.main, 0.05)})`,
+            }}
+          >
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Payment History
+                Remaining Fine
               </Typography>
-              {finePayments
-                .filter((payment) => {
-                  const { start, end } = getDateRange();
-                  const paymentDate = new Date(payment.date);
-                  return paymentDate >= start && paymentDate <= end;
-                })
-                .map((payment) => (
-                  <Box
-                    key={payment.id}
-                    sx={{
-                      py: 2,
-                      borderBottom: 1,
-                      borderColor: 'divider',
-                      '&:last-child': { borderBottom: 0 },
-                    }}
-                  >
-                    <Grid container alignItems="center" spacing={2}>
-                      <Grid item xs={12} sm={3}>
-                        <Typography variant="subtitle1">
-                          {format(new Date(payment.date), 'MMM dd, yyyy')}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12} sm={3}>
-                        <Typography color="text.secondary">
-                          {payment.paymentMethod}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12} sm={3}>
-                        <Typography color="text.secondary">
-                          {format(new Date(payment.startDate), 'MMM dd')} -{' '}
-                          {format(new Date(payment.endDate), 'MMM dd, yyyy')}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12} sm={3} sx={{ textAlign: 'right' }}>
-                        <Typography
-                          variant="subtitle1"
-                          color="success.main"
-                          fontWeight="bold"
-                        >
-                          Rs. {payment.amount}
-                        </Typography>
-                      </Grid>
-                    </Grid>
-                  </Box>
-                ))}
+              <Typography variant="h4" color="error.main">
+                ₹{remainingFine}
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
-      <Dialog open={showPaymentDialog} onClose={() => setShowPaymentDialog(false)}>
-        <DialogTitle>Pay Fine</DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 2 }}>
-            <Typography variant="subtitle1" gutterBottom>
-              Total Amount: Rs. {calculateTotalFine()}
-            </Typography>
-            <TextField
-              select
-              label="Payment Method"
-              value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-              fullWidth
-              sx={{ mt: 2 }}
-            >
-              <MenuItem value="cash">Cash</MenuItem>
-              <MenuItem value="bank">Bank Transfer</MenuItem>
-              <MenuItem value="easypaisa">Easypaisa</MenuItem>
-              <MenuItem value="jazzcash">JazzCash</MenuItem>
-            </TextField>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowPaymentDialog(false)}>Cancel</Button>
-          <Button
-            onClick={handlePayment}
-            variant="contained"
-            color="warning"
-          >
-            Pay Now
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <Box sx={{ mt: 4 }}>
+        <Typography variant="h6" gutterBottom>
+          Payment History
+        </Typography>
+        <Grid container spacing={2}>
+          {finePayments
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            .map((payment) => (
+              <Grid item xs={12} key={payment.id}>
+                <Card
+                  sx={{
+                    borderRadius: 2,
+                    bgcolor: alpha(theme.palette.success.main, 0.1),
+                  }}
+                >
+                  <CardContent>
+                    <Box
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="center"
+                    >
+                      <Box>
+                        <Typography variant="subtitle1" color="success.main">
+                          ₹{payment.amount}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {format(new Date(payment.date), 'MMMM d, yyyy')}
+                        </Typography>
+                      </Box>
+                      <Typography variant="body2" color="text.secondary">
+                        {payment.method}
+                      </Typography>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+        </Grid>
+      </Box>
+
+      {remainingFine > 0 && (
+        <Box sx={{ mt: 4 }}>
+          <Typography variant="h6" gutterBottom>
+            Pay Fine
+          </Typography>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} sm={6}>
+              <input
+                type="number"
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(Number(e.target.value))}
+                placeholder="Enter amount"
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  borderRadius: '4px',
+                  border: '1px solid #ccc',
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => {
+                  onPayFine(paymentAmount);
+                  setPaymentAmount(0);
+                }}
+                disabled={paymentAmount <= 0 || paymentAmount > remainingFine}
+              >
+                Pay Now
+              </Button>
+            </Grid>
+          </Grid>
+        </Box>
+      )}
     </Box>
   );
 };

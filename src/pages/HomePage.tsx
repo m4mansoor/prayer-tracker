@@ -261,30 +261,35 @@ const HomePage: React.FC = () => {
           ))}
         </Grid>
 
-        {/* Prayer History Section */}
-        <Box sx={{ mb: 6 }}>
-          <Typography variant="h5" fontWeight="bold" color="primary" gutterBottom>
+        <Box sx={{ mt: 4 }}>
+          <Typography variant="h5" color="primary.main" gutterBottom>
             Prayer History
           </Typography>
-          <PrayerHistoryComponent prayerHistory={prayerHistory} onClose={() => {}} />
+          <PrayerHistoryComponent
+            prayerHistory={prayerHistory}
+            onClose={() => {}} // Empty function since we don't need it anymore
+          />
         </Box>
 
-        <Divider sx={{ my: 6 }} />
+        <Box sx={{ mt: 4 }}>
+          <Typography variant="h5" color="primary.main" gutterBottom>
+            Fine History
+          </Typography>
+          <FineHistory
+            fineHistory={prayerHistory.fineHistory}
+            finePayments={prayerHistory.finePayments || []}
+            onPayFine={handlePayFine}
+          />
+        </Box>
 
-        {/* Reports Section */}
-        <PrayerReports prayerHistory={prayerHistory} />
+        <Box sx={{ mt: 4 }}>
+          <Typography variant="h5" color="primary.main" gutterBottom>
+            Prayer Reports
+          </Typography>
+          <PrayerReports prayerHistory={prayerHistory} />
+        </Box>
 
-        <Divider sx={{ my: 6 }} />
-
-        {/* Fine History Section */}
-        <FineHistory
-          fineHistory={prayerHistory.fineHistory}
-          finePayments={prayerHistory.finePayments || []}
-          onPayFine={handlePayFine}
-        />
-
-        {/* Today's Fine Section */}
-        <Box sx={{ mb: 6 }}>
+        <Box sx={{ mt: 4 }}>
           <Card
             sx={{
               borderRadius: 3,
@@ -314,7 +319,6 @@ const HomePage: React.FC = () => {
           </Card>
         </Box>
 
-        {/* View History Button */}
         <Box sx={{ mb: 6, textAlign: 'center' }}>
           <Button
             variant="contained"
