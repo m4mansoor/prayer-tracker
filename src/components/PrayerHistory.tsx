@@ -16,6 +16,11 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  FormControl,
+  FormLabel,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -47,12 +52,12 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryProps> = ({
     start: format(new Date(), 'yyyy-MM-dd'),
     end: format(new Date(), 'yyyy-MM-dd'),
   });
-  const [editDialog, setEditDialog] = useState<EditDialogState>({
-    open: false,
-    date: '',
-    prayer: null,
-    reason: '',
-  });
+  const [editingPrayer, setEditingPrayer] = useState<{
+    date: string;
+    name: string;
+    completed: boolean;
+    reason: string;
+  } | null>(null);
 
   const getDateRange = () => {
     const now = new Date();
@@ -107,15 +112,28 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryProps> = ({
     window.location.reload();
   };
 
-  const handleEditDialogClose = () => {
-    setEditDialog({ open: false, date: '', prayer: null, reason: '' });
-  };
+  const handlePrayerEdit = (date: string, name: string, completed: boolean, reason: string) => {
+    const prayers = prayerHistory[date]?.prayers || [];
+    const updatedPrayers = prayers.map((prayer) =>
+      prayer.name === name
+        ? { 
+            ...prayer, 
+            completed,
+            reason
+          }
+        : prayer
+    );
 
-  const handleEditDialogSave = () => {
-    if (editDialog.date && editDialog.prayer) {
-      togglePrayerStatus(editDialog.date, editDialog.prayer.name, editDialog.reason);
-    }
-    handleEditDialogClose();
+    const updatedHistory = {
+      ...prayerHistory,
+      [date]: {
+        ...prayerHistory[date],
+        prayers: updatedPrayers,
+      },
+    };
+
+    localStorage.setItem('prayerHistory', JSON.stringify(updatedHistory));
+    window.location.reload();
   };
 
   return (
@@ -239,10 +257,10 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryProps> = ({
                                 <IconButton
                                   size="small"
                                   onClick={() =>
-                                    setEditDialog({
-                                      open: true,
+                                    setEditingPrayer({
                                       date,
-                                      prayer,
+                                      name: prayer.name,
+                                      completed: prayer.completed,
                                       reason: prayer.reason || '',
                                     })
                                   }
@@ -277,27 +295,78 @@ const PrayerHistoryComponent: React.FC<PrayerHistoryProps> = ({
           ))}
       </Grid>
 
-      <Dialog open={editDialog.open} onClose={handleEditDialogClose}>
-        <DialogTitle>Edit Prayer Status</DialogTitle>
+      <Dialog 
+        open={!!editingPrayer} 
+        onClose={() => setEditingPrayer(null)}
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            maxWidth: 400
+          }
+        }}
+      >
+        <DialogTitle>
+          <Typography variant="h6" color="primary">
+            Edit Prayer Status
+          </Typography>
+        </DialogTitle>
         <DialogContent>
-          <Box sx={{ pt: 2 }}>
+          <Box sx={{ py: 2 }}>
+            <FormControl component="fieldset">
+              <FormLabel component="legend">Prayer Status</FormLabel>
+              <RadioGroup
+                value={editingPrayer?.completed ? 'completed' : 'missed'}
+                onChange={(e) => setEditingPrayer(prev => 
+                  prev ? { ...prev, completed: e.target.value === 'completed' } : null
+                )}
+              >
+                <FormControlLabel 
+                  value="completed" 
+                  control={<Radio color="success" />} 
+                  label="Completed" 
+                />
+                <FormControlLabel 
+                  value="missed" 
+                  control={<Radio color="error" />} 
+                  label="Missed" 
+                />
+              </RadioGroup>
+            </FormControl>
+            
             <TextField
+              margin="dense"
               label="Reason"
               fullWidth
               multiline
               rows={3}
-              value={editDialog.reason}
-              onChange={(e) =>
-                setEditDialog((prev) => ({ ...prev, reason: e.target.value }))
-              }
-              placeholder="Enter reason for prayer status (optional)"
+              value={editingPrayer?.reason || ''}
+              onChange={(e) => setEditingPrayer(prev => 
+                prev ? { ...prev, reason: e.target.value } : null
+              )}
+              sx={{ mt: 2 }}
             />
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleEditDialogClose}>Cancel</Button>
-          <Button onClick={handleEditDialogSave} variant="contained">
-            Save
+          <Button onClick={() => setEditingPrayer(null)}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => {
+              if (editingPrayer) {
+                handlePrayerEdit(
+                  editingPrayer.date,
+                  editingPrayer.name,
+                  editingPrayer.completed,
+                  editingPrayer.reason
+                );
+                setEditingPrayer(null);
+              }
+            }}
+          >
+            Save Changes
           </Button>
         </DialogActions>
       </Dialog>
